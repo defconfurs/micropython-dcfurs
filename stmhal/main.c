@@ -62,14 +62,10 @@
 #include "accel.h"
 #include "servo.h"
 #include "dac.h"
-<<<<<<< HEAD
-#include "pybwlan.h"
 #include "pybstdio.h"
-=======
 #include "modwlan.h"
 #include "modsocket.h"
 #include "modselect.h"
->>>>>>> Update CC3K code
 
 void SystemClock_Config(void);
 
