@@ -62,8 +62,14 @@
 #include "accel.h"
 #include "servo.h"
 #include "dac.h"
+<<<<<<< HEAD
 #include "pybwlan.h"
 #include "pybstdio.h"
+=======
+#include "modwlan.h"
+#include "modsocket.h"
+#include "modselect.h"
+>>>>>>> Update CC3K code
 
 void SystemClock_Config(void);
 
@@ -521,8 +527,9 @@ soft_reset:
 
 #if MICROPY_HW_ENABLE_CC3K
     // wifi using the CC3000 driver
-    pyb_wlan_init();
-    pyb_wlan_start();
+    modwlan_init0();
+    modsocket_init0();
+    modselect_init0();
 #endif
 
     // At this point everything is fully configured and initialised.
