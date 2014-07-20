@@ -174,6 +174,36 @@ STATIC mp_obj_t socket_accept(mp_obj_t self_in) {
     return cli;
 }
 
+STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t addr_obj) {
+    socket_t *self = self_in;
+
+    mp_obj_t *addr;
+    mp_obj_get_array_fixed_n(addr_obj, 2, &addr);
+
+    // fill sockaddr struct
+    int port = mp_obj_get_int(addr[1]);
+    sockaddr_in addr_in = {
+        .sin_family = AF_INET,
+        .sin_port   = htons(port),
+        .sin_addr.s_addr = 0, // to be filled below using inet_pton
+        .sin_zero   = {0}
+    };
+
+    const char *host = mp_obj_str_get_str(addr[0]);
+    if (!inet_pton(AF_INET, host, &addr_in.sin_addr.s_addr)) {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "invalid IP address"));
+    }
+
+    //printf("doing connect: fd=%d, sockaddr=(%d, %d, %lu)\n", self->fd, addr_in.sin_family, addr_in.sin_port, addr_in.sin_addr.s_addr);
+
+    int ret = connect(self->fd, (sockaddr*)&addr_in, sizeof(sockaddr_in));
+    if (ret != 0) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "[Errno %d] connect failed", ret));
+    }
+
+    return mp_const_none;
+}
+
 STATIC mp_obj_t socket_settimeout(mp_obj_t self_in, mp_obj_t timeout) {
     socket_t *self = self_in;
     int optval = mp_obj_get_int(timeout);
@@ -226,9 +256,37 @@ STATIC mp_obj_t modsocket_new(mp_obj_t domain, mp_obj_t type, mp_obj_t protocol)
     return socket_obj;
 }
 
+STATIC mp_obj_t mod_socket_gethostbyname(mp_obj_t hostname) {
+    uint len;
+    const char *host = mp_obj_str_get_data(hostname, &len);
+    uint32_t ip;
+
+    if (gethostbyname((char*)host, len, &ip) < 0) {
+        // TODO raise appropriate exception
+        printf("gethostbyname failed\n");
+        return mp_const_none;
+    }
+
+    if (ip == 0) {
+        // unknown host
+        // TODO CPython raises: socket.gaierror: [Errno -2] Name or service not known
+        printf("Name or service not known\n");
+        return mp_const_none;
+    }
+
+    // turn the ip address into a string (could use inet_ntop, but this here is much more efficient)
+    VSTR_FIXED(ip_str, 16);
+    vstr_printf(&ip_str, "%u.%u.%u.%u", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
+    mp_obj_t ret = mp_obj_new_str(ip_str.buf, ip_str.len, false);
+
+    return ret;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_socket_gethostbyname_obj, mod_socket_gethostbyname);
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_bind_obj,       socket_bind);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_listen_obj,     socket_listen);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_accept_obj,     socket_accept);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_connect_obj,    socket_connect);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj,socket_setblocking);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_close_obj,      socket_close);
@@ -240,6 +298,7 @@ STATIC const mp_map_elem_t socket_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_bind),        (mp_obj_t)&socket_bind_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_listen),      (mp_obj_t)&socket_listen_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_accept),      (mp_obj_t)&socket_accept_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_connect),     (mp_obj_t)&socket_connect_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_settimeout),  (mp_obj_t)&socket_settimeout_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_setblocking), (mp_obj_t)&socket_setblocking_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_close),       (mp_obj_t)&socket_close_obj },
@@ -251,6 +310,7 @@ STATIC MP_DEFINE_CONST_DICT(socket_locals_dict, socket_locals_dict_table);
 STATIC const mp_stream_p_t socket_stream_p = {
     .read = socket_recv,
     .write = socket_send,
+    .is_bytes = true,
 };
 
 const mp_obj_type_t socket_type = {
@@ -266,6 +326,7 @@ const mp_obj_type_t socket_type = {
 void modsocket_init0() {
     mp_obj_t m = mp_obj_new_module(QSTR_FROM_STR_STATIC("socket"));
     mp_store_attr(m, QSTR_FROM_STR_STATIC("socket"),        (mp_obj_t)&modsocket_new_obj);
+    mp_store_attr(m, QSTR_FROM_STR_STATIC("gethostbyname"), (mp_obj_t)&mod_socket_gethostbyname_obj);
     mp_store_attr(m, QSTR_FROM_STR_STATIC("AF_INET"),       mp_obj_new_int(AF_INET));
     mp_store_attr(m, QSTR_FROM_STR_STATIC("AF_INET6"),      mp_obj_new_int(AF_INET6));
     mp_store_attr(m, QSTR_FROM_STR_STATIC("SOCK_STREAM"),   mp_obj_new_int(SOCK_STREAM));

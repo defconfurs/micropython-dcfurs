@@ -37,3 +37,10 @@
 #define MICROPY_HW_SDCARD_DETECT_PIN        (pin_A8)
 #define MICROPY_HW_SDCARD_DETECT_PULL       (GPIO_PULLUP)
 #define MICROPY_HW_SDCARD_DETECT_PRESENT    (GPIO_PIN_RESET)
+
+// CC3K WLAN
+#define MICROPY_HW_WLAN_PIN_CS      (pin_B12)   // Y5
+#define MICROPY_HW_WLAN_PIN_EN      (pin_B9)    // Y4
+#define MICROPY_HW_WLAN_PIN_IRQ     (pin_B8)    // Y3
+#define MICROPY_HW_WLAN_SPI_HANDLE  (SPIHandle2) // SPI on Y position (Y6=B13=SCK, Y7=B14=MISO, Y8=B15=MOSI)
+#define MICROPY_HW_WLAN_IRQ_LINE    (8)         // B8 on line 8

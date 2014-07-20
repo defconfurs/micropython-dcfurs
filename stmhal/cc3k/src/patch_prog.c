@@ -1,8 +1,13 @@
 #include "mpconfigport.h"
 #if MICROPY_HW_ENABLE_CC3K
 
-#include <std.h>
-#include <cc3k.h>
+#include <stdio.h>
+#include <string.h>
+#include "cc3000_common.h"
+#include "nvmem.h"
+#include "ccspi.h"
+#include "hci.h"
+#include "wlan.h"
 #include "patch_prog.h"
 #define BIT0    0x1
 #define BIT1    0x2
@@ -27,7 +32,10 @@ static unsigned char cMacFromEeprom[MAC_ADDR_LEN];
 // Smart Config Prefix
 static const char aucCC3000_prefix[] = {'T', 'T', 'T'};
 
-extern void systick_sleep(unsigned long ms);
+static void systick_sleep(unsigned long ms) {
+    extern void HAL_Delay(volatile uint32_t Delay);
+    HAL_Delay(ms);
+}
 
 // 2 dim array to store address and length of new FAT
 static const unsigned short aFATEntries[2][NVMEM_RM_FILEID + 1] = 
