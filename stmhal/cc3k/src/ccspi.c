@@ -34,7 +34,8 @@
 #include "mpconfigport.h"
 #if MICROPY_HW_ENABLE_CC3K
 
-#include <std.h>
+#include <string.h>
+
 #include "stm32f4xx_hal.h"
 #include "mpconfig.h"
 #include "nlr.h"
@@ -50,6 +51,12 @@
 #include "ccspi.h"
 #include "evnt_handler.h"
 
+#if 0 // print debugging info
+#include <stdio.h>
+#define DEBUG_printf(args...) printf(args)
+#else // don't print debugging info
+#define DEBUG_printf(args...) (void)0
+#endif
 
 #define PIN_CS              MICROPY_HW_WLAN_PIN_CS
 #define PIN_EN              MICROPY_HW_WLAN_PIN_EN
@@ -116,6 +123,8 @@ void SpiClose(void)
 
 void SpiOpen(gcSpiHandleRx pfRxHandler)
 {
+    DEBUG_printf("SpiOpen\n");
+
     /* initialize SPI state */
     sSpiInformation.ulSpiState = eSPI_STATE_POWERUP;
     sSpiInformation.SPIRxHandler = pfRxHandler;
@@ -125,6 +134,20 @@ void SpiOpen(gcSpiHandleRx pfRxHandler)
     sSpiInformation.usRxPacketLength = 0;
     spi_buffer[CC3000_RX_BUFFER_SIZE - 1] = CC3000_BUFFER_MAGIC_NUMBER;
     wlan_tx_buffer[CC3000_TX_BUFFER_SIZE - 1] = CC3000_BUFFER_MAGIC_NUMBER;
+
+    /* SPI configuration */
+    SPI_HANDLE.Init.Mode              = SPI_MODE_MASTER;
+    SPI_HANDLE.Init.Direction         = SPI_DIRECTION_2LINES;
+    SPI_HANDLE.Init.DataSize          = SPI_DATASIZE_8BIT;
+    SPI_HANDLE.Init.CLKPolarity       = SPI_POLARITY_LOW;
+    SPI_HANDLE.Init.CLKPhase          = SPI_PHASE_2EDGE;
+    SPI_HANDLE.Init.NSS               = SPI_NSS_SOFT;
+    SPI_HANDLE.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+    SPI_HANDLE.Init.FirstBit          = SPI_FIRSTBIT_MSB;
+    SPI_HANDLE.Init.TIMode            = SPI_TIMODE_DISABLED;
+    SPI_HANDLE.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
+    SPI_HANDLE.Init.CRCPolynomial     = 7;
+    spi_init(&SPI_HANDLE);
 
     // configure wlan CS and EN pins
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -142,20 +165,6 @@ void SpiOpen(gcSpiHandleRx pfRxHandler)
     HAL_GPIO_WritePin(PIN_CS.gpio, PIN_CS.pin_mask, GPIO_PIN_SET);
     HAL_GPIO_WritePin(PIN_EN.gpio, PIN_EN.pin_mask, GPIO_PIN_RESET);
 
-    /* SPI configuration */
-    SPI_HANDLE.Init.Mode              = SPI_MODE_MASTER;
-    SPI_HANDLE.Init.Direction         = SPI_DIRECTION_2LINES;
-    SPI_HANDLE.Init.DataSize          = SPI_DATASIZE_8BIT;
-    SPI_HANDLE.Init.CLKPolarity       = SPI_POLARITY_LOW;
-    SPI_HANDLE.Init.CLKPhase          = SPI_PHASE_2EDGE;
-    SPI_HANDLE.Init.NSS               = SPI_NSS_SOFT;
-    SPI_HANDLE.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-    SPI_HANDLE.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-    SPI_HANDLE.Init.TIMode            = SPI_TIMODE_DISABLED;
-    SPI_HANDLE.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
-    SPI_HANDLE.Init.CRCPolynomial     = 7;
-    spi_init(&SPI_HANDLE);
-
     /* do a dummy read, this ensures SCLK is low before
        actual communications start, it might be required */
     CS_LOW();
@@ -166,6 +175,8 @@ void SpiOpen(gcSpiHandleRx pfRxHandler)
     // register EXTI
     extint_register((mp_obj_t)&PIN_IRQ, GPIO_MODE_IT_FALLING, GPIO_PULLUP, (mp_obj_t)&irq_callback_obj, true, NULL);
     extint_enable(IRQ_LINE);
+
+    DEBUG_printf("SpiOpen finished; IRQ.pin=%d IRQ_LINE=%d\n", PIN_IRQ.pin, IRQ_LINE);
 }
 
 
@@ -192,11 +203,14 @@ void WriteWlanPin(unsigned char val)
 
 void __delay_cycles(volatile int x)
 {
+    x *= 6; // for 168 MHz CPU
     while (x--);
 }
 
 long SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 {
+    DEBUG_printf("SpiFirstWrite %lu\n", sSpiInformation.ulSpiState);
+
     CS_LOW();
 
     // Assuming we are running on 24 MHz ~50 micro delay is 1200 cycles;
@@ -219,6 +233,8 @@ long SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 
 long SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 {
+    DEBUG_printf("SpiWrite %lu\n", sSpiInformation.ulSpiState);
+
     unsigned char ucPad = 0;
 
     // Figure out the total length of the packet in order to figure out if there 
@@ -288,11 +304,13 @@ long SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 
 void SpiWriteDataSynchronous(unsigned char *data, unsigned short size)
 {
+    DEBUG_printf("SpiWriteDataSynchronous(data=%p [%x %x %x %x], size=%u)\n", data, data[0], data[1], data[2], data[3], size);
     __disable_irq();
     if (HAL_SPI_TransmitReceive(&SPI_HANDLE, data, data, size, SPI_TIMEOUT) != HAL_OK) {
         //BREAK();
     }
     __enable_irq();
+    DEBUG_printf(" - rx data = [%x %x %x %x]\n", data[0], data[1], data[2], data[3]);
 }
 
 void SpiReadDataSynchronous(unsigned char *data, unsigned short size)
@@ -401,12 +419,15 @@ void SSIContReadOperation(void)
 
 STATIC mp_obj_t irq_callback(mp_obj_t line)
 {
+    DEBUG_printf("<< IRQ; state=%lu >>\n", sSpiInformation.ulSpiState);
     switch (sSpiInformation.ulSpiState) {
         case eSPI_STATE_POWERUP:
             /* This means IRQ line was low call a callback of HCI Layer to inform on event */
+            DEBUG_printf(" - POWERUP\n");
             sSpiInformation.ulSpiState = eSPI_STATE_INITIALIZED;
             break;
         case eSPI_STATE_IDLE:
+            DEBUG_printf(" - IDLE\n");
             sSpiInformation.ulSpiState = eSPI_STATE_READ_IRQ;
 
             /* IRQ line goes down - we are start reception */
@@ -420,6 +441,7 @@ STATIC mp_obj_t irq_callback(mp_obj_t line)
             SSIContReadOperation();
             break;
         case eSPI_STATE_WRITE_IRQ:
+            DEBUG_printf(" - WRITE IRQ\n");
             SpiWriteDataSynchronous(sSpiInformation.pTxPacket, sSpiInformation.usTxPacketLength);
 
             sSpiInformation.ulSpiState = eSPI_STATE_IDLE;

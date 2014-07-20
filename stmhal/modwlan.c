@@ -105,7 +105,6 @@ STATIC mp_obj_t modwlan_connect(uint n_args, const mp_obj_t *args, mp_map_t *kw_
         if (!IS_WLAN_SEC(sec)) {
             nlr_raise(mp_obj_new_exception_msg(
                         &mp_type_ValueError, "Invalid security mode"));
-            return mp_const_false;
         }
 
     }
@@ -117,10 +116,10 @@ STATIC mp_obj_t modwlan_connect(uint n_args, const mp_obj_t *args, mp_map_t *kw_
 
     // connect to AP
     if (wlan_connect(sec, (char*) ssid, ssid_len, (uint8_t*)bssid, (uint8_t*)key, key_len) != 0) {
-        return mp_const_false;
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "could not connect to ssid=%s, sec=%d, key=%s\n", ssid, sec, key));
     }
 
-    return mp_const_true;
+    return mp_const_none;
 }
 
 STATIC mp_obj_t modwlan_disconnect() {

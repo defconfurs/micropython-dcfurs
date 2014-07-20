@@ -188,6 +188,9 @@ SRC_CC3K = $(addprefix $(CC3K_DIR)/src/,\
 	inet_ntop.c \
 	inet_pton.c \
 	)
+#	patch.c \
+#	patch_prog.c \
+	)
 
 OBJ =
 OBJ += $(PY_O)
