@@ -48,7 +48,7 @@ void socket_print(void (*print)(void *env, const char *fmt, ...), void *env, mp_
     printf("<%s %p>", mp_obj_get_type_str(self_in), self_in);
 }
 
-STATIC mp_int_t socket_send(mp_obj_t self_in, const void *buf, mp_uint_t size, int *errcode) {
+STATIC mp_uint_t socket_send(mp_obj_t self_in, const void *buf, mp_uint_t size, int *errcode) {
     int bytes = 0;
     socket_t *self = self_in;
 
@@ -74,7 +74,7 @@ STATIC mp_int_t socket_send(mp_obj_t self_in, const void *buf, mp_uint_t size, i
     return bytes;
 }
 
-STATIC mp_int_t socket_recv(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
+STATIC mp_uint_t socket_recv(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
     int bytes = 0;
     socket_t *self = self_in;
 
@@ -310,7 +310,6 @@ STATIC MP_DEFINE_CONST_DICT(socket_locals_dict, socket_locals_dict_table);
 STATIC const mp_stream_p_t socket_stream_p = {
     .read = socket_recv,
     .write = socket_send,
-    .is_bytes = true,
 };
 
 const mp_obj_type_t socket_type = {
