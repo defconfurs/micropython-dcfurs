@@ -1,4 +1,6 @@
-#include <std.h>
+#include <string.h>
+#include <stdio.h>
+
 #include "stm32f4xx_hal.h"
 #include "mpconfig.h"
 #include "nlr.h"
@@ -7,6 +9,7 @@
 #include "obj.h"
 #include "objtuple.h"
 #include "runtime.h"
+#include "portmodules.h"
 
 #include "hci.h"
 #include "ccspi.h"
@@ -14,8 +17,6 @@
 #include "nvmem.h"
 #include "netapp.h"
 #include "patch_prog.h"
-
-#include "modwlan.h"
 
 #if MICROPY_HW_ENABLE_CC3K
 
@@ -27,11 +28,11 @@ STATIC volatile int fd_state=0;
 STATIC volatile int ip_obtained = 0;
 STATIC volatile int wlan_connected = 0;
 
-int wlan_get_fd_state(int fd) {
+int mod_wlan_get_fd_state(int fd) {
     return (fd_state & (1<<fd));
 }
 
-void wlan_clear_fd_state(int fd) {
+void mod_wlan_clear_fd_state(int fd) {
     // reset socket state
     fd_state &= ~(1<<fd);
 }
@@ -55,7 +56,7 @@ STATIC void sWlanCallback(long lEventType, char * data, unsigned char length) {
     }
 }
 
-STATIC mp_obj_t modwlan_init() {
+STATIC mp_obj_t modwlan_init(void) {
     // initialize and start the module
     wlan_init(sWlanCallback, NULL, NULL, NULL,
             ReadWlanInterruptPin, SpiResumeSpi, SpiPauseSpi, WriteWlanPin);
@@ -122,19 +123,19 @@ STATIC mp_obj_t modwlan_connect(uint n_args, const mp_obj_t *args, mp_map_t *kw_
     return mp_const_none;
 }
 
-STATIC mp_obj_t modwlan_disconnect() {
+STATIC mp_obj_t modwlan_disconnect(void) {
     int ret = wlan_disconnect();
     return mp_obj_new_int(ret);
 }
 
-STATIC mp_obj_t modwlan_is_connected() {
+STATIC mp_obj_t modwlan_is_connected(void) {
     if (wlan_connected && ip_obtained) {
         return mp_const_true;
     }
     return mp_const_false;
 }
 
-STATIC mp_obj_t modwlan_ifconfig() {
+STATIC mp_obj_t modwlan_ifconfig(void) {
     tNetappIpconfigRetArgs ipconfig={{0}};
 
     uint8_t *ip = &ipconfig.aucIP[0];
@@ -163,7 +164,7 @@ STATIC mp_obj_t modwlan_ifconfig() {
     return mp_const_none;
 }
 
-STATIC mp_obj_t modwlan_patch_version() {
+STATIC mp_obj_t modwlan_patch_version(void) {
     uint8_t pver[2];
     mp_obj_tuple_t *t_pver;
 
@@ -174,7 +175,7 @@ STATIC mp_obj_t modwlan_patch_version() {
     return t_pver;
 }
 
-STATIC mp_obj_t modwlan_patch_program() {
+STATIC mp_obj_t modwlan_patch_program(void) {
     //patch_prog_start();
     return mp_const_none;
 }
@@ -187,21 +188,37 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0 (modwlan_is_connected_obj, modwlan_is_connected
 STATIC MP_DEFINE_CONST_FUN_OBJ_0 (modwlan_patch_version_obj,modwlan_patch_version);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0 (modwlan_patch_program_obj,modwlan_patch_program);
 
-void modwlan_init0() {
-    mp_obj_t m = mp_obj_new_module(QSTR_FROM_STR_STATIC("wlan"));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("WEP"),   mp_obj_new_int(WLAN_SEC_WEP));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("WPA"),   mp_obj_new_int(WLAN_SEC_WPA));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("WPA2"),  mp_obj_new_int(WLAN_SEC_WPA2));
+STATIC const mp_map_elem_t wlan_module_globals_table[] = {
+    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_wlan) },
 
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("init"),          (mp_obj_t)&modwlan_init_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("connect"),       (mp_obj_t)&modwlan_connect_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("disconnect"),    (mp_obj_t)&modwlan_disconnect_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("is_connected"),  (mp_obj_t)&modwlan_is_connected_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("ifconfig"),      (mp_obj_t)&modwlan_ifconfig_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("patch_version"), (mp_obj_t)&modwlan_patch_version_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("patch_program"), (mp_obj_t)&modwlan_patch_program_obj);
+    { MP_OBJ_NEW_QSTR(MP_QSTR_init), (mp_obj_t)&modwlan_init_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_connect), (mp_obj_t)&modwlan_connect_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_disconnect), (mp_obj_t)&modwlan_disconnect_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_is_connected), (mp_obj_t)&modwlan_is_connected_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ifconfig), (mp_obj_t)&modwlan_ifconfig_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_patch_version), (mp_obj_t)&modwlan_patch_version_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_patch_program), (mp_obj_t)&modwlan_patch_program_obj },
 
-    mp_store_name(QSTR_FROM_STR_STATIC("wlan"), m);
-}
+    { MP_OBJ_NEW_QSTR(MP_QSTR_WEP), MP_OBJ_NEW_SMALL_INT(WLAN_SEC_WEP) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_WPA), MP_OBJ_NEW_SMALL_INT(WLAN_SEC_WPA) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_WPA2), MP_OBJ_NEW_SMALL_INT(WLAN_SEC_WPA2) },
+};
+
+STATIC const mp_obj_dict_t wlan_module_globals = {
+    .base = {&mp_type_dict},
+    .map = {
+        .all_keys_are_qstrs = 1,
+        .table_is_fixed_array = 1,
+        .used = MP_ARRAY_SIZE(wlan_module_globals_table),
+        .alloc = MP_ARRAY_SIZE(wlan_module_globals_table),
+        .table = (mp_map_elem_t*)wlan_module_globals_table,
+    },
+};
+
+const mp_obj_module_t wlan_module = {
+    .base = { &mp_type_module },
+    .name = MP_QSTR_wlan,
+    .globals = (mp_obj_dict_t*)&wlan_module_globals,
+};
 
 #endif //MICROPY_HW_ENABLE_CC3K

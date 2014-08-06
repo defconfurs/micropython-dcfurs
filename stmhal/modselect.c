@@ -7,6 +7,7 @@
 #include "obj.h"
 #include "objtuple.h"
 #include "runtime.h"
+#include "portmodules.h"
 
 #include "hci.h"
 #include "ccspi.h"
@@ -16,10 +17,6 @@
 #include "netapp.h"
 #include "evnt_handler.h"
 #include "patch_prog.h"
-
-#include "modwlan.h"
-#include "modsocket.h"
-#include "modselect.h"
 
 #if MICROPY_HW_ENABLE_CC3K
 
@@ -70,7 +67,7 @@ STATIC void get_fds(mp_obj_t *fdlist, uint fdlist_len, mp_obj_t *fdlist_out, fd_
     }
 }
 
-STATIC mp_obj_t modselect_select(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t mod_select_select(uint n_args, const mp_obj_t *args) {
     int nfds=0; //highest-numbered fd plus 1
     timeval tv={0};
     fd_set rfds, wfds, xfds;
@@ -101,7 +98,7 @@ STATIC mp_obj_t modselect_select(uint n_args, const mp_obj_t *args) {
     // a subsequent call to recv() returns 0. This behavior is consistent with BSD.
     for (int i=0; i<rlist_len; i++) {
         socket_t *s = rlist[i];
-        if (wlan_get_fd_state(s->fd)) {
+        if (mod_wlan_get_fd_state(s->fd)) {
             FD_SET(s->fd, &rfds);
             nfds = (nfds > s->fd)? nfds:s->fd;
         }
@@ -127,12 +124,28 @@ STATIC mp_obj_t modselect_select(uint n_args, const mp_obj_t *args) {
 
     return mp_obj_new_tuple(3, fds);
 }
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_select_select_obj, 3, 4, mod_select_select);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modselect_select_obj, 3, 4, modselect_select);
+STATIC const mp_map_elem_t select_module_globals_table[] = {
+    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_select) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_select), (mp_obj_t)&mod_select_select_obj },
+};
 
-void modselect_init0() {
-    mp_obj_t m = mp_obj_new_module(QSTR_FROM_STR_STATIC("select"));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("select"),    (mp_obj_t)&modselect_select_obj);
-    mp_store_name(QSTR_FROM_STR_STATIC("select"), m);
-}
+STATIC const mp_obj_dict_t select_module_globals = {
+    .base = {&mp_type_dict},
+    .map = {
+        .all_keys_are_qstrs = 1,
+        .table_is_fixed_array = 1,
+        .used = MP_ARRAY_SIZE(select_module_globals_table),
+        .alloc = MP_ARRAY_SIZE(select_module_globals_table),
+        .table = (mp_map_elem_t*)select_module_globals_table,
+    },
+};
+
+const mp_obj_module_t select_module = {
+    .base = { &mp_type_module },
+    .name = MP_QSTR_select,
+    .globals = (mp_obj_dict_t*)&select_module_globals,
+};
+
 #endif // MICROPY_HW_ENABLE_CC3K

@@ -1,4 +1,9 @@
+// We can't include stdio.h because it defines _types_fd_set, but we
+// need to use the CC3000 version of this type.
+
+#include <string.h>
 #include <std.h>
+
 #include "stm32f4xx_hal.h"
 #include "mpconfig.h"
 #include "nlr.h"
@@ -8,6 +13,7 @@
 #include "objtuple.h"
 #include "stream.h"
 #include "runtime.h"
+#include "portmodules.h"
 
 #include "hci.h"
 #include "ccspi.h"
@@ -19,10 +25,6 @@
 #include "patch_prog.h"
 #include "inet_ntop.h"
 #include "inet_pton.h"
-
-#include "modwlan.h"
-#include "modsocket.h"
-#include "modselect.h"
 
 #if MICROPY_HW_ENABLE_CC3K
 
@@ -52,7 +54,7 @@ STATIC mp_uint_t socket_send(mp_obj_t self_in, const void *buf, mp_uint_t size, 
     int bytes = 0;
     socket_t *self = self_in;
 
-    if (wlan_get_fd_state(self->fd)) {
+    if (mod_wlan_get_fd_state(self->fd)) {
         closesocket(self->fd);
         *errcode = EPIPE;
         return 0;
@@ -78,7 +80,7 @@ STATIC mp_uint_t socket_recv(mp_obj_t self_in, void *buf, mp_uint_t size, int *e
     int bytes = 0;
     socket_t *self = self_in;
 
-    if (wlan_get_fd_state(self->fd)) {
+    if (mod_wlan_get_fd_state(self->fd)) {
         closesocket(self->fd);
         return 0;
     }
@@ -149,7 +151,7 @@ STATIC mp_obj_t socket_accept(mp_obj_t self_in) {
     }
 
     // clear socket state
-    wlan_clear_fd_state(fd);
+    mod_wlan_clear_fd_state(fd);
 
     // create new socket object
     socket_t *socket_obj = m_new_obj_with_finaliser(socket_t);
@@ -240,49 +242,6 @@ STATIC mp_obj_t socket_close(mp_obj_t self_in) {
     return mp_const_none;
 }
 
-STATIC mp_obj_t modsocket_new(mp_obj_t domain, mp_obj_t type, mp_obj_t protocol) {
-    socket_t *socket_obj = m_new_obj_with_finaliser(socket_t);
-    socket_obj->base.type = (mp_obj_t)&socket_type;
-
-    // create new socket
-    socket_obj->fd = socket(mp_obj_get_int(domain), mp_obj_get_int(type), mp_obj_get_int(protocol));
-    if (socket_obj->fd < 0) {
-        m_del_obj(socket_t, socket_obj);
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "socket failed"));
-    }
-
-    // clear socket state
-    wlan_clear_fd_state(socket_obj->fd);
-    return socket_obj;
-}
-
-STATIC mp_obj_t mod_socket_gethostbyname(mp_obj_t hostname) {
-    uint len;
-    const char *host = mp_obj_str_get_data(hostname, &len);
-    uint32_t ip;
-
-    if (gethostbyname((char*)host, len, &ip) < 0) {
-        // TODO raise appropriate exception
-        printf("gethostbyname failed\n");
-        return mp_const_none;
-    }
-
-    if (ip == 0) {
-        // unknown host
-        // TODO CPython raises: socket.gaierror: [Errno -2] Name or service not known
-        printf("Name or service not known\n");
-        return mp_const_none;
-    }
-
-    // turn the ip address into a string (could use inet_ntop, but this here is much more efficient)
-    VSTR_FIXED(ip_str, 16);
-    vstr_printf(&ip_str, "%u.%u.%u.%u", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
-    mp_obj_t ret = mp_obj_new_str(ip_str.buf, ip_str.len, false);
-
-    return ret;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_socket_gethostbyname_obj, mod_socket_gethostbyname);
-
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_bind_obj,       socket_bind);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_listen_obj,     socket_listen);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_accept_obj,     socket_accept);
@@ -290,7 +249,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_connect_obj,    socket_connect);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj,socket_setblocking);
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_close_obj,      socket_close);
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(modsocket_new_obj,     modsocket_new);
 
 STATIC const mp_map_elem_t socket_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_send),        (mp_obj_t)&mp_stream_write_obj },
@@ -322,22 +280,85 @@ const mp_obj_type_t socket_type = {
     .locals_dict = (mp_obj_t)&socket_locals_dict,
 };
 
-void modsocket_init0() {
-    mp_obj_t m = mp_obj_new_module(QSTR_FROM_STR_STATIC("socket"));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("socket"),        (mp_obj_t)&modsocket_new_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("gethostbyname"), (mp_obj_t)&mod_socket_gethostbyname_obj);
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("AF_INET"),       mp_obj_new_int(AF_INET));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("AF_INET6"),      mp_obj_new_int(AF_INET6));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("SOCK_STREAM"),   mp_obj_new_int(SOCK_STREAM));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("SOCK_DGRAM"),    mp_obj_new_int(SOCK_DGRAM));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("SOCK_RAW"),      mp_obj_new_int(SOCK_RAW));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_IP"),    mp_obj_new_int(IPPROTO_IP));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_ICMP"),  mp_obj_new_int(IPPROTO_ICMP));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_IPV4"),  mp_obj_new_int(IPPROTO_IPV4));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_TCP"),   mp_obj_new_int(IPPROTO_TCP));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_UDP"),   mp_obj_new_int(IPPROTO_UDP));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_IPV6"),  mp_obj_new_int(IPPROTO_IPV6));
-    mp_store_attr(m, QSTR_FROM_STR_STATIC("IPPROTO_RAW"),   mp_obj_new_int(IPPROTO_RAW));
-    mp_store_name(QSTR_FROM_STR_STATIC("socket"), m);
+STATIC mp_obj_t mod_socket_socket(mp_obj_t domain, mp_obj_t type, mp_obj_t protocol) {
+    socket_t *socket_obj = m_new_obj_with_finaliser(socket_t);
+    socket_obj->base.type = (mp_obj_t)&socket_type;
+
+    // create new socket
+    socket_obj->fd = socket(mp_obj_get_int(domain), mp_obj_get_int(type), mp_obj_get_int(protocol));
+    if (socket_obj->fd < 0) {
+        m_del_obj(socket_t, socket_obj);
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "socket failed"));
+    }
+
+    // clear socket state
+    mod_wlan_clear_fd_state(socket_obj->fd);
+    return socket_obj;
 }
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(mod_socket_socket_obj, mod_socket_socket);
+
+STATIC mp_obj_t mod_socket_gethostbyname(mp_obj_t hostname) {
+    uint len;
+    const char *host = mp_obj_str_get_data(hostname, &len);
+    uint32_t ip;
+
+    if (gethostbyname((char*)host, len, &ip) < 0) {
+        // TODO raise appropriate exception
+        printf("gethostbyname failed\n");
+        return mp_const_none;
+    }
+
+    if (ip == 0) {
+        // unknown host
+        // TODO CPython raises: socket.gaierror: [Errno -2] Name or service not known
+        printf("Name or service not known\n");
+        return mp_const_none;
+    }
+
+    // turn the ip address into a string (could use inet_ntop, but this here is much more efficient)
+    VSTR_FIXED(ip_str, 16);
+    vstr_printf(&ip_str, "%u.%u.%u.%u", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
+    mp_obj_t ret = mp_obj_new_str(ip_str.buf, ip_str.len, false);
+
+    return ret;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_socket_gethostbyname_obj, mod_socket_gethostbyname);
+
+STATIC const mp_map_elem_t socket_module_globals_table[] = {
+    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_socket) },
+
+    { MP_OBJ_NEW_QSTR(MP_QSTR_socket),         (mp_obj_t)&mod_socket_socket_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gethostbyname),  (mp_obj_t)&mod_socket_gethostbyname_obj },
+
+    { MP_OBJ_NEW_QSTR(MP_QSTR_AF_INET),        MP_OBJ_NEW_SMALL_INT(AF_INET) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_AF_INET6),       MP_OBJ_NEW_SMALL_INT(AF_INET6) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SOCK_STREAM),    MP_OBJ_NEW_SMALL_INT(SOCK_STREAM) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SOCK_DGRAM),     MP_OBJ_NEW_SMALL_INT(SOCK_DGRAM) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SOCK_RAW),       MP_OBJ_NEW_SMALL_INT(SOCK_RAW) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_IP),     MP_OBJ_NEW_SMALL_INT(IPPROTO_IP) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_ICMP),   MP_OBJ_NEW_SMALL_INT(IPPROTO_ICMP) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_IPV4),   MP_OBJ_NEW_SMALL_INT(IPPROTO_IPV4) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_TCP),    MP_OBJ_NEW_SMALL_INT(IPPROTO_TCP) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_UDP),    MP_OBJ_NEW_SMALL_INT(IPPROTO_UDP) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_IPV6),   MP_OBJ_NEW_SMALL_INT(IPPROTO_IPV6) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_IPPROTO_RAW),    MP_OBJ_NEW_SMALL_INT(IPPROTO_RAW) },
+};
+
+STATIC const mp_obj_dict_t socket_module_globals = {
+    .base = {&mp_type_dict},
+    .map = {
+        .all_keys_are_qstrs = 1,
+        .table_is_fixed_array = 1,
+        .used = MP_ARRAY_SIZE(socket_module_globals_table),
+        .alloc = MP_ARRAY_SIZE(socket_module_globals_table),
+        .table = (mp_map_elem_t*)socket_module_globals_table,
+    },
+};
+
+const mp_obj_module_t socket_module = {
+    .base = { &mp_type_module },
+    .name = MP_QSTR_socket,
+    .globals = (mp_obj_dict_t*)&socket_module_globals,
+};
+
 #endif // MICROPY_HW_ENABLE_CC3K

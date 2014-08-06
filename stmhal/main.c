@@ -63,9 +63,6 @@
 #include "servo.h"
 #include "dac.h"
 #include "pybstdio.h"
-#include "modwlan.h"
-#include "modsocket.h"
-#include "modselect.h"
 
 void SystemClock_Config(void);
 
@@ -519,13 +516,6 @@ soft_reset:
 #if MICROPY_HW_ENABLE_DAC
     // DAC
     dac_init();
-#endif
-
-#if MICROPY_HW_ENABLE_CC3K
-    // wifi using the CC3000 driver
-    modwlan_init0();
-    modsocket_init0();
-    modselect_init0();
 #endif
 
     // At this point everything is fully configured and initialised.

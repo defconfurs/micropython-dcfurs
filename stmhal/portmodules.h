@@ -28,8 +28,22 @@ extern const mp_obj_module_t os_module;
 extern const mp_obj_module_t pyb_module;
 extern const mp_obj_module_t stm_module;
 extern const mp_obj_module_t time_module;
+extern const mp_obj_module_t wlan_module;
+extern const mp_obj_module_t socket_module;
+extern const mp_obj_module_t select_module;
 
 // additional helper functions exported by the modules
 
 mp_uint_t mod_time_year_day(mp_uint_t year, mp_uint_t month, mp_uint_t date);
 mp_uint_t mod_time_seconds_since_2000(mp_uint_t year, mp_uint_t month, mp_uint_t date, mp_uint_t hour, mp_uint_t minute, mp_uint_t second);
+
+int mod_wlan_get_fd_state(int fd);
+void mod_wlan_clear_fd_state(int fd);
+
+// TODO this should not be a public type
+typedef struct {
+    mp_obj_base_t base;
+    int fd;
+} socket_t;
+
+extern const mp_obj_type_t socket_type;
