@@ -111,6 +111,9 @@
 #define MICROPY_EMIT_INLINE_THUMB (0)
 #endif
 
+// Convenience definition for whether any native emitter is enabled
+#define MICROPY_EMIT_NATIVE (MICROPY_EMIT_X64 || MICROPY_EMIT_THUMB)
+
 /*****************************************************************************/
 /* Compiler configuration                                                    */
 
@@ -368,8 +371,13 @@ typedef double mp_float_t;
 
 
 // Extended modules
+
 #ifndef MICROPY_PY_UCTYPES
 #define MICROPY_PY_UCTYPES (0)
+#endif
+
+#ifndef MICROPY_PY_ZLIBD
+#define MICROPY_PY_ZLIBD (0)
 #endif
 
 /*****************************************************************************/

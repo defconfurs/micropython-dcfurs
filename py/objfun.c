@@ -501,7 +501,66 @@ mp_obj_t mp_obj_new_fun_bc(uint scope_flags, qstr *args, uint n_pos_args, uint n
 }
 
 /******************************************************************************/
+/* viper functions                                                            */
+
+#if MICROPY_EMIT_NATIVE
+
+typedef struct _mp_obj_fun_viper_t {
+    mp_obj_base_t base;
+    int n_args;
+    void *fun;
+    mp_uint_t type_sig;
+} mp_obj_fun_viper_t;
+
+typedef mp_uint_t (*viper_fun_0_t)();
+typedef mp_uint_t (*viper_fun_1_t)(mp_uint_t);
+typedef mp_uint_t (*viper_fun_2_t)(mp_uint_t, mp_uint_t);
+typedef mp_uint_t (*viper_fun_3_t)(mp_uint_t, mp_uint_t, mp_uint_t);
+
+STATIC mp_obj_t fun_viper_call(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+    mp_obj_fun_viper_t *self = self_in;
+
+    mp_arg_check_num(n_args, n_kw, self->n_args, self->n_args, false);
+
+    mp_uint_t ret;
+    if (n_args == 0) {
+        ret = ((viper_fun_0_t)self->fun)();
+    } else if (n_args == 1) {
+        ret = ((viper_fun_1_t)self->fun)(mp_convert_obj_to_native(args[0], self->type_sig >> 2));
+    } else if (n_args == 2) {
+        ret = ((viper_fun_2_t)self->fun)(mp_convert_obj_to_native(args[0], self->type_sig >> 2), mp_convert_obj_to_native(args[1], self->type_sig >> 4));
+    } else if (n_args == 3) {
+        ret = ((viper_fun_3_t)self->fun)(mp_convert_obj_to_native(args[0], self->type_sig >> 2), mp_convert_obj_to_native(args[1], self->type_sig >> 4), mp_convert_obj_to_native(args[2], self->type_sig >> 6));
+    } else {
+        assert(0);
+        ret = 0;
+    }
+
+    return mp_convert_native_to_obj(ret, self->type_sig);
+}
+
+STATIC const mp_obj_type_t mp_type_fun_viper = {
+    { &mp_type_type },
+    .name = MP_QSTR_function,
+    .call = fun_viper_call,
+    .binary_op = fun_binary_op,
+};
+
+mp_obj_t mp_obj_new_fun_viper(uint n_args, void *fun, mp_uint_t type_sig) {
+    mp_obj_fun_viper_t *o = m_new_obj(mp_obj_fun_viper_t);
+    o->base.type = &mp_type_fun_viper;
+    o->n_args = n_args;
+    o->fun = fun;
+    o->type_sig = type_sig;
+    return o;
+}
+
+#endif // MICROPY_EMIT_NATIVE
+
+/******************************************************************************/
 /* inline assembler functions                                                 */
+
+#if MICROPY_EMIT_INLINE_THUMB
 
 typedef struct _mp_obj_fun_asm_t {
     mp_obj_base_t base;
@@ -603,3 +662,5 @@ mp_obj_t mp_obj_new_fun_asm(uint n_args, void *fun) {
     o->fun = fun;
     return o;
 }
+
+#endif // MICROPY_EMIT_INLINE_THUMB
