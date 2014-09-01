@@ -100,7 +100,7 @@ STATIC void uni_print(void (*print)(void *env, const char *fmt, ...), void *env,
     }
 }
 
-STATIC mp_obj_t uni_unary_op(int op, mp_obj_t self_in) {
+STATIC mp_obj_t uni_unary_op(mp_uint_t op, mp_obj_t self_in) {
     GET_STR_DATA_LEN(self_in, str_data, str_len);
     switch (op) {
         case MP_UNARY_OP_BOOL:
@@ -112,7 +112,7 @@ STATIC mp_obj_t uni_unary_op(int op, mp_obj_t self_in) {
     }
 }
 
-STATIC mp_obj_t str_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t str_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
 #if MICROPY_CPYTHON_COMPAT
     if (n_kw != 0) {
         mp_arg_error_unimpl_kw();
@@ -154,7 +154,7 @@ STATIC mp_obj_t str_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_
 
 // Convert an index into a pointer to its lead byte. Out of bounds indexing will raise IndexError or
 // be capped to the first/last character of the string, depending on is_slice.
-const byte *str_index_to_ptr(const mp_obj_type_t *type, const byte *self_data, uint self_len,
+const byte *str_index_to_ptr(const mp_obj_type_t *type, const byte *self_data, mp_uint_t self_len,
                              mp_obj_t index, bool is_slice) {
     mp_int_t i;
     // Copied from mp_get_index; I don't want bounds checking, just give me

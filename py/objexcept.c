@@ -88,10 +88,10 @@ mp_obj_t mp_alloc_emergency_exception_buf(mp_obj_t size_in) {
 
     // Update the 2 variables atomically so that an interrupt can't occur
     // between the assignments.
-    MICROPY_BEGIN_ATOMIC_SECTION();
+    mp_uint_t irq_state = MICROPY_BEGIN_ATOMIC_SECTION();
     mp_emergency_exception_buf_size = size;
     mp_emergency_exception_buf = buf;
-    MICROPY_END_ATOMIC_SECTION();
+    MICROPY_END_ATOMIC_SECTION(irq_state);
 
     if (old_buf != NULL) {
         m_free(old_buf, old_size);
@@ -130,7 +130,7 @@ STATIC void mp_obj_exception_print(void (*print)(void *env, const char *fmt, ...
     mp_obj_tuple_print(print, env, o->args, kind);
 }
 
-mp_obj_t mp_obj_exception_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+mp_obj_t mp_obj_exception_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_obj_type_t *type = type_in;
 
     if (n_kw != 0) {
@@ -171,7 +171,7 @@ STATIC void exception_load_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     }
 }
 
-STATIC mp_obj_t exc___init__(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t exc___init__(mp_uint_t n_args, const mp_obj_t *args) {
     mp_obj_exception_t *self = args[0];
     mp_obj_t argst = mp_obj_new_tuple(n_args - 1, args + 1);
     self->args = argst;
@@ -296,7 +296,7 @@ mp_obj_t mp_obj_new_exception_arg1(const mp_obj_type_t *exc_type, mp_obj_t arg) 
     return mp_obj_new_exception_args(exc_type, 1, &arg);
 }
 
-mp_obj_t mp_obj_new_exception_args(const mp_obj_type_t *exc_type, uint n_args, const mp_obj_t *args) {
+mp_obj_t mp_obj_new_exception_args(const mp_obj_type_t *exc_type, mp_uint_t n_args, const mp_obj_t *args) {
     assert(exc_type->make_new == mp_obj_exception_make_new);
     return exc_type->make_new((mp_obj_t)exc_type, n_args, 0, args);
 }
@@ -464,7 +464,7 @@ void mp_obj_exception_get_traceback(mp_obj_t self_in, mp_uint_t *n, mp_uint_t **
         *n = 0;
         *values = NULL;
     } else {
-        uint n2;
+        mp_uint_t n2;
         mp_obj_list_get(self->traceback, &n2, (mp_obj_t**)values);
         *n = n2;
     }

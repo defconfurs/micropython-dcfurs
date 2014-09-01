@@ -104,7 +104,7 @@ STATIC void set_print(void (*print)(void *env, const char *fmt, ...), void *env,
     }
     #endif
     print(env, "{");
-    for (int i = 0; i < self->set.alloc; i++) {
+    for (mp_uint_t i = 0; i < self->set.alloc; i++) {
         if (MP_SET_SLOT_IS_FILLED(&self->set, i)) {
             if (!first) {
                 print(env, ", ");
@@ -122,7 +122,7 @@ STATIC void set_print(void (*print)(void *env, const char *fmt, ...), void *env,
 }
 
 
-STATIC mp_obj_t set_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t set_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 1, false);
 
     switch (n_args) {
@@ -234,7 +234,7 @@ STATIC mp_obj_t set_discard(mp_obj_t self_in, mp_obj_t item) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(set_discard_obj, set_discard);
 
-STATIC mp_obj_t set_diff_int(int n_args, const mp_obj_t *args, bool update) {
+STATIC mp_obj_t set_diff_int(mp_uint_t n_args, const mp_obj_t *args, bool update) {
     assert(n_args > 0);
 
     mp_obj_set_t *self;
@@ -247,7 +247,7 @@ STATIC mp_obj_t set_diff_int(int n_args, const mp_obj_t *args, bool update) {
     }
 
 
-    for (int i = 1; i < n_args; i++) {
+    for (mp_uint_t i = 1; i < n_args; i++) {
         mp_obj_t other = args[i];
         if (self == other) {
             set_clear(self);
@@ -264,12 +264,12 @@ STATIC mp_obj_t set_diff_int(int n_args, const mp_obj_t *args, bool update) {
     return self;
 }
 
-STATIC mp_obj_t set_diff(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t set_diff(mp_uint_t n_args, const mp_obj_t *args) {
     return set_diff_int(n_args, args, false);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(set_diff_obj, 1, set_diff);
 
-STATIC mp_obj_t set_diff_update(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t set_diff_update(mp_uint_t n_args, const mp_obj_t *args) {
     set_diff_int(n_args, args, true);
     return mp_const_none;
 }
@@ -453,10 +453,10 @@ STATIC void set_update_int(mp_obj_set_t *self, mp_obj_t other_in) {
     }
 }
 
-STATIC mp_obj_t set_update(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t set_update(mp_uint_t n_args, const mp_obj_t *args) {
     assert(n_args > 0);
 
-    for (int i = 1; i < n_args; i++) {
+    for (mp_uint_t i = 1; i < n_args; i++) {
         set_update_int(args[0], args[i]);
     }
 
@@ -472,7 +472,7 @@ STATIC mp_obj_t set_union(mp_obj_t self_in, mp_obj_t other_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(set_union_obj, set_union);
 
-STATIC mp_obj_t set_unary_op(int op, mp_obj_t self_in) {
+STATIC mp_obj_t set_unary_op(mp_uint_t op, mp_obj_t self_in) {
     mp_obj_set_t *self = self_in;
     switch (op) {
         case MP_UNARY_OP_BOOL: return MP_BOOL(self->set.used != 0);
@@ -481,7 +481,7 @@ STATIC mp_obj_t set_unary_op(int op, mp_obj_t self_in) {
     }
 }
 
-STATIC mp_obj_t set_binary_op(int op, mp_obj_t lhs, mp_obj_t rhs) {
+STATIC mp_obj_t set_binary_op(mp_uint_t op, mp_obj_t lhs, mp_obj_t rhs) {
     mp_obj_t args[] = {lhs, rhs};
     switch (op) {
         case MP_BINARY_OP_OR:
@@ -571,11 +571,11 @@ const mp_obj_type_t mp_type_frozenset = {
 };
 #endif
 
-mp_obj_t mp_obj_new_set(int n_args, mp_obj_t *items) {
+mp_obj_t mp_obj_new_set(mp_uint_t n_args, mp_obj_t *items) {
     mp_obj_set_t *o = m_new_obj(mp_obj_set_t);
     o->base.type = &mp_type_set;
     mp_set_init(&o->set, n_args);
-    for (int i = 0; i < n_args; i++) {
+    for (mp_uint_t i = 0; i < n_args; i++) {
         mp_set_lookup(&o->set, items[i], MP_MAP_LOOKUP_ADD_IF_NOT_FOUND);
     }
     return o;

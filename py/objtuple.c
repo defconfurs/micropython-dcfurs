@@ -36,7 +36,7 @@
 #include "runtime.h"
 #include "objtuple.h"
 
-STATIC mp_obj_t mp_obj_new_tuple_iterator(mp_obj_tuple_t *tuple, int cur);
+STATIC mp_obj_t mp_obj_new_tuple_iterator(mp_obj_tuple_t *tuple, mp_uint_t cur);
 
 /******************************************************************************/
 /* tuple                                                                      */
@@ -44,7 +44,7 @@ STATIC mp_obj_t mp_obj_new_tuple_iterator(mp_obj_tuple_t *tuple, int cur);
 void mp_obj_tuple_print(void (*print)(void *env, const char *fmt, ...), void *env, mp_obj_t o_in, mp_print_kind_t kind) {
     mp_obj_tuple_t *o = o_in;
     print(env, "(");
-    for (int i = 0; i < o->len; i++) {
+    for (mp_uint_t i = 0; i < o->len; i++) {
         if (i > 0) {
             print(env, ", ");
         }
@@ -56,7 +56,7 @@ void mp_obj_tuple_print(void (*print)(void *env, const char *fmt, ...), void *en
     print(env, ")");
 }
 
-STATIC mp_obj_t mp_obj_tuple_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t mp_obj_tuple_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 1, false);
 
     switch (n_args) {
@@ -73,8 +73,8 @@ STATIC mp_obj_t mp_obj_tuple_make_new(mp_obj_t type_in, uint n_args, uint n_kw, 
 
             // TODO optimise for cases where we know the length of the iterator
 
-            uint alloc = 4;
-            uint len = 0;
+            mp_uint_t alloc = 4;
+            mp_uint_t len = 0;
             mp_obj_t *items = m_new(mp_obj_t, alloc);
 
             mp_obj_t iterable = mp_getiter(args[0]);
@@ -96,7 +96,7 @@ STATIC mp_obj_t mp_obj_tuple_make_new(mp_obj_t type_in, uint n_args, uint n_kw, 
 }
 
 // Don't pass MP_BINARY_OP_NOT_EQUAL here
-STATIC bool tuple_cmp_helper(int op, mp_obj_t self_in, mp_obj_t another_in) {
+STATIC bool tuple_cmp_helper(mp_uint_t op, mp_obj_t self_in, mp_obj_t another_in) {
     mp_obj_type_t *self_type = mp_obj_get_type(self_in);
     if (self_type->getiter != mp_obj_tuple_getiter) {
         assert(0);
@@ -115,7 +115,7 @@ STATIC bool tuple_cmp_helper(int op, mp_obj_t self_in, mp_obj_t another_in) {
     return mp_seq_cmp_objs(op, self->items, self->len, another->items, another->len);
 }
 
-mp_obj_t mp_obj_tuple_unary_op(int op, mp_obj_t self_in) {
+mp_obj_t mp_obj_tuple_unary_op(mp_uint_t op, mp_obj_t self_in) {
     mp_obj_tuple_t *self = self_in;
     switch (op) {
         case MP_UNARY_OP_BOOL: return MP_BOOL(self->len != 0);
@@ -124,7 +124,7 @@ mp_obj_t mp_obj_tuple_unary_op(int op, mp_obj_t self_in) {
     }
 }
 
-mp_obj_t mp_obj_tuple_binary_op(int op, mp_obj_t lhs, mp_obj_t rhs) {
+mp_obj_t mp_obj_tuple_binary_op(mp_uint_t op, mp_obj_t lhs, mp_obj_t rhs) {
     mp_obj_tuple_t *o = lhs;
     switch (op) {
         case MP_BINARY_OP_ADD: {
@@ -176,7 +176,7 @@ mp_obj_t mp_obj_tuple_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
             return res;
         }
 #endif
-        uint index_value = mp_get_index(self->base.type, self->len, index, false);
+        mp_uint_t index_value = mp_get_index(self->base.type, self->len, index, false);
         return self->items[index_value];
     } else {
         return MP_OBJ_NULL; // op not supported
@@ -194,7 +194,7 @@ STATIC mp_obj_t tuple_count(mp_obj_t self_in, mp_obj_t value) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(tuple_count_obj, tuple_count);
 
-STATIC mp_obj_t tuple_index(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t tuple_index(mp_uint_t n_args, const mp_obj_t *args) {
     assert(MP_OBJ_IS_TYPE(args[0], &mp_type_tuple));
     mp_obj_tuple_t *self = args[0];
     return mp_seq_index_obj(self->items, self->len, n_args, args);
@@ -223,7 +223,7 @@ const mp_obj_type_t mp_type_tuple = {
 // the zero-length tuple
 const mp_obj_tuple_t mp_const_empty_tuple_obj = {{&mp_type_tuple}, 0};
 
-mp_obj_t mp_obj_new_tuple(uint n, const mp_obj_t *items) {
+mp_obj_t mp_obj_new_tuple(mp_uint_t n, const mp_obj_t *items) {
     if (n == 0) {
         return mp_const_empty_tuple;
     }
@@ -231,22 +231,18 @@ mp_obj_t mp_obj_new_tuple(uint n, const mp_obj_t *items) {
     o->base.type = &mp_type_tuple;
     o->len = n;
     if (items) {
-        for (int i = 0; i < n; i++) {
+        for (mp_uint_t i = 0; i < n; i++) {
             o->items[i] = items[i];
         }
     }
     return o;
 }
 
-void mp_obj_tuple_get(mp_obj_t self_in, uint *len, mp_obj_t **items) {
+void mp_obj_tuple_get(mp_obj_t self_in, mp_uint_t *len, mp_obj_t **items) {
     assert(MP_OBJ_IS_TYPE(self_in, &mp_type_tuple));
     mp_obj_tuple_t *self = self_in;
-    if (len) {
-        *len = self->len;
-    }
-    if (items) {
-        *items = &self->items[0];
-    }
+    *len = self->len;
+    *items = &self->items[0];
 }
 
 void mp_obj_tuple_del(mp_obj_t self_in) {
@@ -260,7 +256,7 @@ mp_int_t mp_obj_tuple_hash(mp_obj_t self_in) {
     mp_obj_tuple_t *self = self_in;
     // start hash with pointer to empty tuple, to make it fairly unique
     mp_int_t hash = (mp_int_t)mp_const_empty_tuple;
-    for (uint i = 0; i < self->len; i++) {
+    for (mp_uint_t i = 0; i < self->len; i++) {
         hash += mp_obj_hash(self->items[i]);
     }
     return hash;
@@ -293,7 +289,7 @@ STATIC const mp_obj_type_t mp_type_tuple_it = {
     .iternext = tuple_it_iternext,
 };
 
-STATIC mp_obj_t mp_obj_new_tuple_iterator(mp_obj_tuple_t *tuple, int cur) {
+STATIC mp_obj_t mp_obj_new_tuple_iterator(mp_obj_tuple_t *tuple, mp_uint_t cur) {
     mp_obj_tuple_it_t *o = m_new_obj(mp_obj_tuple_it_t);
     o->base.type = &mp_type_tuple_it;
     o->tuple = tuple;

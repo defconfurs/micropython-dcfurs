@@ -152,7 +152,7 @@ STATIC void adc_print(void (*print)(void *env, const char *fmt, ...), void *env,
 /// \classmethod \constructor(pin)
 /// Create an ADC object associated with the given pin.
 /// This allows you to then read analog values on that pin.
-STATIC mp_obj_t adc_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t adc_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     // check number of arguments
     mp_arg_check_num(n_args, n_kw, 1, 1, false);
 
@@ -167,7 +167,7 @@ STATIC mp_obj_t adc_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_
         const pin_obj_t *pin = pin_find(pin_obj);
         if ((pin->adc_num & PIN_ADC1) == 0) {
             // No ADC1 function on that pin
-            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "pin %s does not have ADC capabilities", pin->name));
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "pin %s does not have ADC capabilities", qstr_str(pin->name)));
         }
         channel = pin->adc_channel;
     }
@@ -372,7 +372,7 @@ float adc_read_core_vref(ADC_HandleTypeDef *adcHandle) {
 /******************************************************************************/
 /* Micro Python bindings : adc_all object                                     */
 
-STATIC mp_obj_t adc_all_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t adc_all_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     // check number of arguments
     mp_arg_check_num(n_args, n_kw, 1, 1, false);
 

@@ -713,6 +713,23 @@ STATIC void c_if_cond(compiler_t *comp, mp_parse_node_t pn, bool jump_if, int la
         } else if (MP_PARSE_NODE_STRUCT_KIND(pns) == PN_not_test_2) {
             c_if_cond(comp, pns->nodes[0], !jump_if, label);
             return;
+        } else if (MP_PARSE_NODE_STRUCT_KIND(pns) == PN_atom_paren) {
+            // cond is something in parenthesis
+            if (MP_PARSE_NODE_IS_NULL(pns->nodes[0])) {
+                // empty tuple, acts as false for the condition
+                if (jump_if == false) {
+                    EMIT_ARG(jump, label);
+                }
+            } else if (MP_PARSE_NODE_IS_STRUCT_KIND(pns->nodes[0], PN_testlist_comp)) {
+                // non-empty tuple, acts as true for the condition
+                if (jump_if == true) {
+                    EMIT_ARG(jump, label);
+                }
+            } else {
+                // parenthesis around 1 item, is just that item
+                c_if_cond(comp, pns->nodes[0], jump_if, label);
+            }
+            return;
         }
     }
 
@@ -3626,6 +3643,11 @@ mp_obj_t mp_compile(mp_parse_node_t pn, qstr source_file, uint emit_opt, bool is
                         emit_native = emit_native_thumb_new(max_num_labels);
                     }
                     comp->emit_method_table = &emit_native_thumb_method_table;
+#elif MICROPY_EMIT_ARM
+                    if (emit_native == NULL) {
+                        emit_native = emit_native_arm_new(max_num_labels);
+                    }
+                    comp->emit_method_table = &emit_native_arm_method_table;
 #endif
                     comp->emit = emit_native;
                     EMIT_ARG(set_native_type, MP_EMIT_NATIVE_TYPE_ENABLE, s->emit_options == MP_EMIT_OPT_VIPER, 0);
@@ -3669,6 +3691,8 @@ mp_obj_t mp_compile(mp_parse_node_t pn, qstr source_file, uint emit_opt, bool is
         emit_native_x64_free(emit_native);
 #elif MICROPY_EMIT_THUMB
         emit_native_thumb_free(emit_native);
+#elif MICROPY_EMIT_ARM
+	emit_native_arm_free(emit_native);
 #endif
     }
 #endif

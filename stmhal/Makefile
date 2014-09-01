@@ -9,6 +9,7 @@ endif
 BUILD ?= build-$(BOARD)
 
 include ../py/mkenv.mk
+-include mpconfigport.mk
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h
@@ -41,7 +42,7 @@ INC += -I$(FATFS_DIR)/src
 INC += -I$(CC3K_DIR)/inc
 
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
-CFLAGS = $(INC) -Wall -Werror -ansi -std=gnu99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
+CFLAGS = $(INC) -Wall -Werror -ansi -std=gnu99 -nostdlib $(CFLAGS_MOD) $(CFLAGS_CORTEX_M4) $(COPT)
 CFLAGS += -Iboards/$(BOARD)
 
 LDFLAGS = -nostdlib -T stm32f405.ld -Map=$(@:.elf=.map) --cref
@@ -60,6 +61,13 @@ endif
 # uncomment this if you want libgcc
 #LIBS += $(shell $(CC) -print-libgcc-file-name)
 
+SRC_LIB = $(addprefix lib/,\
+	libm/math.c \
+	libm/mathsincos.c \
+	libm/atanf.c \
+	libm/atan2f.c \
+	)
+
 SRC_C = \
 	main.c \
 	string0.c \
@@ -70,6 +78,7 @@ SRC_C = \
 	usbd_desc_cdc_msc.c \
 	usbd_cdc_interface.c \
 	usbd_msc_storage.c \
+	irq.c \
 	pendsv.c \
 	systick.c  \
 	timer.c \
@@ -83,8 +92,6 @@ SRC_C = \
 	uart.c \
 	usb.c \
 	printf.c \
-	math.c \
-	mathsincos.c \
 	gccollect.c \
 	pybstdio.c \
 	readline.c \
@@ -196,15 +203,37 @@ SRC_CC3K = $(addprefix $(CC3K_DIR)/src/,\
 #	patch_prog.c \
 	)
 
+ifeq ($(MICROPY_PY_WIZNET5K),1)
+WIZNET5K_DIR=drivers/wiznet5k
+INC += -I$(TOP)/$(WIZNET5K_DIR)
+CFLAGS_MOD += -DMICROPY_PY_WIZNET5K=1
+SRC_MOD += modwiznet5k.c
+SRC_MOD += $(addprefix $(WIZNET5K_DIR)/,\
+	ethernet/w5200/w5200.c \
+	ethernet/wizchip_conf.c \
+	ethernet/socket.c \
+	internet/dns/dns.c \
+	)
+endif
+
 OBJ =
 OBJ += $(PY_O)
+OBJ += $(addprefix $(BUILD)/, $(SRC_LIB:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_S:.s=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_HAL:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_USBDEV:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_FATFS:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_CC3K:.c=.o))
+OBJ += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
 OBJ += $(BUILD)/pins_$(BOARD).o
+
+# We put ff.o and stm32f4xx_hal_sd.o into the first 16K section with the ISRs.
+# If we compile these using -O0 then it won't fit. So if you really want these
+# to be compiled with -O0, then edit stm32f405.ld (in the .isr_vector section)
+# and comment out the following 2 lines.
+$(BUILD)/$(FATFS_DIR)/src/ff.o: COPT += -Os
+$(BUILD)/$(HAL_DIR)/src/stm32f4xx_hal_sd.o: COPT += -Os
 
 all: $(BUILD)/firmware.dfu $(BUILD)/firmware.hex
 
@@ -237,6 +266,7 @@ GEN_PINS_SRC = $(BUILD)/pins_$(BOARD).c
 GEN_PINS_HDR = $(HEADER_BUILD)/pins.h
 GEN_PINS_QSTR = $(BUILD)/pins_qstr.h
 GEN_PINS_AF_CONST = $(HEADER_BUILD)/pins_af_const.h
+GEN_PINS_AF_PY = $(BUILD)/pins_af.py
 
 INSERT_USB_IDS = ../tools/insert-usb-ids.py
 FILE2H = ../tools/file2h.py
@@ -259,7 +289,7 @@ $(BUILD)/main.o: $(GEN_CDCINF_HEADER)
 # both pins_$(BOARD).c and pins.h
 $(BUILD)/%_$(BOARD).c $(HEADER_BUILD)/%.h $(HEADER_BUILD)/%_af_const.h $(BUILD)/%_qstr.h: boards/$(BOARD)/%.csv $(MAKE_PINS) $(AF_FILE) $(PREFIX_FILE) | $(HEADER_BUILD)
 	$(ECHO) "Create $@"
-	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) --prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --qstr $(GEN_PINS_QSTR) --af-const $(GEN_PINS_AF_CONST) > $(GEN_PINS_SRC)
+	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) --prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --qstr $(GEN_PINS_QSTR) --af-const $(GEN_PINS_AF_CONST) --af-py $(GEN_PINS_AF_PY) > $(GEN_PINS_SRC)
 
 $(BUILD)/pins_$(BOARD).o: $(BUILD)/pins_$(BOARD).c
 	$(call compile_c)

@@ -36,10 +36,10 @@
 #include "runtime.h"
 #include "objlist.h"
 
-STATIC mp_obj_t mp_obj_new_list_iterator(mp_obj_list_t *list, int cur);
-STATIC mp_obj_list_t *list_new(uint n);
+STATIC mp_obj_t mp_obj_new_list_iterator(mp_obj_list_t *list, mp_uint_t cur);
+STATIC mp_obj_list_t *list_new(mp_uint_t n);
 STATIC mp_obj_t list_extend(mp_obj_t self_in, mp_obj_t arg_in);
-STATIC mp_obj_t list_pop(uint n_args, const mp_obj_t *args);
+STATIC mp_obj_t list_pop(mp_uint_t n_args, const mp_obj_t *args);
 
 // TODO: Move to mpconfig.h
 #define LIST_MIN_ALLOC 4
@@ -50,7 +50,7 @@ STATIC mp_obj_t list_pop(uint n_args, const mp_obj_t *args);
 STATIC void list_print(void (*print)(void *env, const char *fmt, ...), void *env, mp_obj_t o_in, mp_print_kind_t kind) {
     mp_obj_list_t *o = o_in;
     print(env, "[");
-    for (int i = 0; i < o->len; i++) {
+    for (mp_uint_t i = 0; i < o->len; i++) {
         if (i > 0) {
             print(env, ", ");
         }
@@ -68,7 +68,7 @@ STATIC mp_obj_t list_extend_from_iter(mp_obj_t list, mp_obj_t iterable) {
     return list;
 }
 
-STATIC mp_obj_t list_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t list_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 1, false);
 
     switch (n_args) {
@@ -87,7 +87,7 @@ STATIC mp_obj_t list_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp
 }
 
 // Don't pass MP_BINARY_OP_NOT_EQUAL here
-STATIC bool list_cmp_helper(int op, mp_obj_t self_in, mp_obj_t another_in) {
+STATIC bool list_cmp_helper(mp_uint_t op, mp_obj_t self_in, mp_obj_t another_in) {
     assert(MP_OBJ_IS_TYPE(self_in, &mp_type_list));
     if (!MP_OBJ_IS_TYPE(another_in, &mp_type_list)) {
         return false;
@@ -98,7 +98,7 @@ STATIC bool list_cmp_helper(int op, mp_obj_t self_in, mp_obj_t another_in) {
     return mp_seq_cmp_objs(op, self->items, self->len, another->items, another->len);
 }
 
-STATIC mp_obj_t list_unary_op(int op, mp_obj_t self_in) {
+STATIC mp_obj_t list_unary_op(mp_uint_t op, mp_obj_t self_in) {
     mp_obj_list_t *self = self_in;
     switch (op) {
         case MP_UNARY_OP_BOOL: return MP_BOOL(self->len != 0);
@@ -107,7 +107,7 @@ STATIC mp_obj_t list_unary_op(int op, mp_obj_t self_in) {
     }
 }
 
-STATIC mp_obj_t list_binary_op(int op, mp_obj_t lhs, mp_obj_t rhs) {
+STATIC mp_obj_t list_binary_op(mp_uint_t op, mp_obj_t lhs, mp_obj_t rhs) {
     mp_obj_list_t *o = lhs;
     switch (op) {
         case MP_BINARY_OP_ADD: {
@@ -188,7 +188,7 @@ STATIC mp_obj_t list_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
             return res;
         }
 #endif
-        uint index_val = mp_get_index(self->base.type, self->len, index, false);
+        mp_uint_t index_val = mp_get_index(self->base.type, self->len, index, false);
         return self->items[index_val];
     } else {
 #if MICROPY_PY_BUILTINS_SLICE
@@ -264,17 +264,17 @@ STATIC mp_obj_t list_extend(mp_obj_t self_in, mp_obj_t arg_in) {
     return mp_const_none; // return None, as per CPython
 }
 
-STATIC mp_obj_t list_pop(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t list_pop(mp_uint_t n_args, const mp_obj_t *args) {
     assert(1 <= n_args && n_args <= 2);
     assert(MP_OBJ_IS_TYPE(args[0], &mp_type_list));
     mp_obj_list_t *self = args[0];
     if (self->len == 0) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_IndexError, "pop from empty list"));
     }
-    uint index = mp_get_index(self->base.type, self->len, n_args == 1 ? MP_OBJ_NEW_SMALL_INT(-1) : args[1], false);
+    mp_uint_t index = mp_get_index(self->base.type, self->len, n_args == 1 ? MP_OBJ_NEW_SMALL_INT(-1) : args[1], false);
     mp_obj_t ret = self->items[index];
     self->len -= 1;
-    memcpy(self->items + index, self->items + index + 1, (self->len - index) * sizeof(mp_obj_t));
+    memmove(self->items + index, self->items + index + 1, (self->len - index) * sizeof(mp_obj_t));
     // Clear stale pointer from slot which just got freed to prevent GC issues
     self->items[self->len] = MP_OBJ_NULL;
     if (self->alloc > LIST_MIN_ALLOC && self->alloc > 2 * self->len) {
@@ -286,7 +286,7 @@ STATIC mp_obj_t list_pop(uint n_args, const mp_obj_t *args) {
 
 // TODO make this conform to CPython's definition of sort
 STATIC void mp_quicksort(mp_obj_t *head, mp_obj_t *tail, mp_obj_t key_fn, bool reversed) {
-    int op = reversed ? MP_BINARY_OP_MORE : MP_BINARY_OP_LESS;
+    mp_uint_t op = reversed ? MP_BINARY_OP_MORE : MP_BINARY_OP_LESS;
     while (head < tail) {
         mp_obj_t *h = head - 1;
         mp_obj_t *t = tail;
@@ -307,7 +307,7 @@ STATIC void mp_quicksort(mp_obj_t *head, mp_obj_t *tail, mp_obj_t key_fn, bool r
     }
 }
 
-mp_obj_t mp_obj_list_sort(uint n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+mp_obj_t mp_obj_list_sort(mp_uint_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     assert(n_args >= 1);
     assert(MP_OBJ_IS_TYPE(args[0], &mp_type_list));
     if (n_args > 1) {
@@ -347,7 +347,7 @@ STATIC mp_obj_t list_count(mp_obj_t self_in, mp_obj_t value) {
     return mp_seq_count_obj(self->items, self->len, value);
 }
 
-STATIC mp_obj_t list_index(uint n_args, const mp_obj_t *args) {
+STATIC mp_obj_t list_index(mp_uint_t n_args, const mp_obj_t *args) {
     assert(2 <= n_args && n_args <= 4);
     assert(MP_OBJ_IS_TYPE(args[0], &mp_type_list));
     mp_obj_list_t *self = args[0];
@@ -358,7 +358,7 @@ STATIC mp_obj_t list_insert(mp_obj_t self_in, mp_obj_t idx, mp_obj_t obj) {
     assert(MP_OBJ_IS_TYPE(self_in, &mp_type_list));
     mp_obj_list_t *self = self_in;
     // insert has its own strange index logic
-    int index = MP_OBJ_SMALL_INT_VALUE(idx);
+    mp_int_t index = MP_OBJ_SMALL_INT_VALUE(idx);
     if (index < 0) {
          index += self->len;
     }
@@ -371,7 +371,7 @@ STATIC mp_obj_t list_insert(mp_obj_t self_in, mp_obj_t idx, mp_obj_t obj) {
 
     mp_obj_list_append(self_in, mp_const_none);
 
-    for (int i = self->len-1; i > index; i--) {
+    for (mp_int_t i = self->len-1; i > index; i--) {
          self->items[i] = self->items[i-1];
     }
     self->items[index] = obj;
@@ -392,8 +392,8 @@ STATIC mp_obj_t list_reverse(mp_obj_t self_in) {
     assert(MP_OBJ_IS_TYPE(self_in, &mp_type_list));
     mp_obj_list_t *self = self_in;
 
-    int len = self->len;
-    for (int i = 0; i < len/2; i++) {
+    mp_int_t len = self->len;
+    for (mp_int_t i = 0; i < len/2; i++) {
          mp_obj_t *a = self->items[i];
          self->items[i] = self->items[len-i-1];
          self->items[len-i-1] = a;
@@ -442,7 +442,7 @@ const mp_obj_type_t mp_type_list = {
     .locals_dict = (mp_obj_t)&list_locals_dict,
 };
 
-void mp_obj_list_init(mp_obj_list_t *o, uint n) {
+void mp_obj_list_init(mp_obj_list_t *o, mp_uint_t n) {
     o->base.type = &mp_type_list;
     o->alloc = n < LIST_MIN_ALLOC ? LIST_MIN_ALLOC : n;
     o->len = n;
@@ -450,29 +450,29 @@ void mp_obj_list_init(mp_obj_list_t *o, uint n) {
     mp_seq_clear(o->items, n, o->alloc, sizeof(*o->items));
 }
 
-STATIC mp_obj_list_t *list_new(uint n) {
+STATIC mp_obj_list_t *list_new(mp_uint_t n) {
     mp_obj_list_t *o = m_new_obj(mp_obj_list_t);
     mp_obj_list_init(o, n);
     return o;
 }
 
-mp_obj_t mp_obj_new_list(uint n, mp_obj_t *items) {
+mp_obj_t mp_obj_new_list(mp_uint_t n, mp_obj_t *items) {
     mp_obj_list_t *o = list_new(n);
     if (items != NULL) {
-        for (int i = 0; i < n; i++) {
+        for (mp_uint_t i = 0; i < n; i++) {
             o->items[i] = items[i];
         }
     }
     return o;
 }
 
-void mp_obj_list_get(mp_obj_t self_in, uint *len, mp_obj_t **items) {
+void mp_obj_list_get(mp_obj_t self_in, mp_uint_t *len, mp_obj_t **items) {
     mp_obj_list_t *self = self_in;
     *len = self->len;
     *items = self->items;
 }
 
-void mp_obj_list_set_len(mp_obj_t self_in, uint len) {
+void mp_obj_list_set_len(mp_obj_t self_in, mp_uint_t len) {
     // trust that the caller knows what it's doing
     // TODO realloc if len got much smaller than alloc
     mp_obj_list_t *self = self_in;
@@ -481,7 +481,7 @@ void mp_obj_list_set_len(mp_obj_t self_in, uint len) {
 
 void mp_obj_list_store(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
     mp_obj_list_t *self = self_in;
-    uint i = mp_get_index(self->base.type, self->len, index, false);
+    mp_uint_t i = mp_get_index(self->base.type, self->len, index, false);
     self->items[i] = value;
 }
 
@@ -512,7 +512,7 @@ STATIC const mp_obj_type_t mp_type_list_it = {
     .iternext = list_it_iternext,
 };
 
-mp_obj_t mp_obj_new_list_iterator(mp_obj_list_t *list, int cur) {
+mp_obj_t mp_obj_new_list_iterator(mp_obj_list_t *list, mp_uint_t cur) {
     mp_obj_list_it_t *o = m_new_obj(mp_obj_list_it_t);
     o->base.type = &mp_type_list_it;
     o->list = list;

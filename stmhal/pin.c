@@ -245,12 +245,12 @@ STATIC void pin_print(void (*print)(void *env, const char *fmt, ...), void *env,
     }
 }
 
-STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *pin, uint n_args, const mp_obj_t *args, mp_map_t *kw_args);
+STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *pin, mp_uint_t n_args, const mp_obj_t *args, mp_map_t *kw_args);
 
 /// \classmethod \constructor(id, ...)
 /// Create a new Pin object associated with the id.  If additional arguments are given,
 /// they are used to initialise the pin.  See `init`.
-STATIC mp_obj_t pin_make_new(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t pin_make_new(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
 
     // Run an argument through the mapper and return the result.
@@ -268,7 +268,7 @@ STATIC mp_obj_t pin_make_new(mp_obj_t self_in, uint n_args, uint n_kw, const mp_
 
 /// \classmethod mapper([fun])
 /// Get or set the pin mapper function.
-STATIC mp_obj_t pin_mapper(uint n_args, mp_obj_t *args) {
+STATIC mp_obj_t pin_mapper(mp_uint_t n_args, const mp_obj_t *args) {
     if (n_args > 1) {
         pin_class_mapper = args[1];
         return mp_const_none;
@@ -280,7 +280,7 @@ STATIC MP_DEFINE_CONST_CLASSMETHOD_OBJ(pin_mapper_obj, (mp_obj_t)&pin_mapper_fun
 
 /// \classmethod dict([dict])
 /// Get or set the pin mapper dictionary.
-STATIC mp_obj_t pin_map_dict(uint n_args, mp_obj_t *args) {
+STATIC mp_obj_t pin_map_dict(mp_uint_t n_args, const mp_obj_t *args) {
     if (n_args > 1) {
         pin_class_map_dict = args[1];
         return mp_const_none;
@@ -306,7 +306,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_list_obj, pin_af_list);
 
 /// \classmethod debug([state])
 /// Get or set the debugging state (`True` or `False` for on or off).
-STATIC mp_obj_t pin_debug(uint n_args, mp_obj_t *args) {
+STATIC mp_obj_t pin_debug(mp_uint_t n_args, const mp_obj_t *args) {
     if (n_args > 1) {
         pin_class_debug = mp_obj_is_true(args[1]);
         return mp_const_none;
@@ -341,7 +341,7 @@ STATIC const mp_arg_t pin_init_args[] = {
 };
 #define PIN_INIT_NUM_ARGS MP_ARRAY_SIZE(pin_init_args)
 
-STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, mp_uint_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     // parse args
     mp_arg_val_t vals[PIN_INIT_NUM_ARGS];
     mp_arg_parse_all(n_args, args, kw_args, PIN_INIT_NUM_ARGS, pin_init_args, vals);
@@ -410,7 +410,7 @@ STATIC mp_obj_t pin_obj_init_helper(const pin_obj_t *self, uint n_args, const mp
     return mp_const_none;
 }
 
-STATIC mp_obj_t pin_obj_init(uint n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+STATIC mp_obj_t pin_obj_init(mp_uint_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     return pin_obj_init_helper(args[0], n_args - 1, args + 1, kw_args);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pin_init_obj, 1, pin_obj_init);
@@ -422,7 +422,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pin_init_obj, 1, pin_obj_init);
 ///   - With `value` given, set the logic level of the pin.  `value` can be
 ///   anything that converts to a boolean.  If it converts to `True`, the pin
 ///   is set high, otherwise it is set low.
-STATIC mp_obj_t pin_value(uint n_args, mp_obj_t *args) {
+STATIC mp_obj_t pin_value(mp_uint_t n_args, const mp_obj_t *args) {
     pin_obj_t *self = args[0];
     if (n_args == 1) {
         // get pin
@@ -508,6 +508,33 @@ STATIC mp_obj_t pin_gpio(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_gpio_obj, pin_gpio);
 
+/// \method mode()
+/// Returns the currently configured mode of the pin. The integer returned
+/// will match one of the allowed constants for the mode argument to the init
+/// function.
+STATIC mp_obj_t pin_mode(mp_obj_t self_in) {
+    return MP_OBJ_NEW_SMALL_INT(pin_get_mode(self_in));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_mode_obj, pin_mode);
+
+/// \method pull()
+/// Returns the currently configured pull of the pin. The integer returned
+/// will match one of the allowed constants for the pull argument to the init
+/// function.
+STATIC mp_obj_t pin_pull(mp_obj_t self_in) {
+    return MP_OBJ_NEW_SMALL_INT(pin_get_pull(self_in));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_pull_obj, pin_pull);
+
+/// \method af()
+/// Returns the currently configured alternate-function of the pin. The
+/// integer returned will match one of the allowed constants for the af
+/// argument to the init function.
+STATIC mp_obj_t pin_af(mp_obj_t self_in) {
+    return MP_OBJ_NEW_SMALL_INT(pin_get_af(self_in));
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(pin_af_obj, pin_af);
+
 STATIC const mp_map_elem_t pin_locals_dict_table[] = {
     // instance methods
     { MP_OBJ_NEW_QSTR(MP_QSTR_init),    (mp_obj_t)&pin_init_obj },
@@ -520,6 +547,9 @@ STATIC const mp_map_elem_t pin_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_port),    (mp_obj_t)&pin_port_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_pin),     (mp_obj_t)&pin_pin_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gpio),    (mp_obj_t)&pin_gpio_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_mode),    (mp_obj_t)&pin_mode_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_pull),    (mp_obj_t)&pin_pull_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_af),      (mp_obj_t)&pin_af_obj },
 
     // class methods
     { MP_OBJ_NEW_QSTR(MP_QSTR_mapper),  (mp_obj_t)&pin_mapper_obj },
@@ -534,6 +564,9 @@ STATIC const mp_map_elem_t pin_locals_dict_table[] = {
     /// \constant IN - initialise the pin to input mode
     /// \constant OUT_PP - initialise the pin to output mode with a push-pull drive
     /// \constant OUT_OD - initialise the pin to output mode with an open-drain drive
+    /// \constant AF_PP - initialise the pin to alternate-function mode with a push-pull drive
+    /// \constant AF_OD - initialise the pin to alternate-function mode with an open-drain drive
+    /// \constant ANALOG - initialise the pin to analog mode
     /// \constant PULL_NONE - don't enable any pull up or down resistors on the pin
     /// \constant PULL_UP - enable the pull-up resistor on the pin
     /// \constant PULL_DOWN - enable the pull-down resistor on the pin

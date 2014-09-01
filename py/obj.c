@@ -111,7 +111,7 @@ void mp_obj_print_exception(mp_obj_t exc) {
     printf("\n");
 }
 
-int mp_obj_is_true(mp_obj_t arg) {
+bool mp_obj_is_true(mp_obj_t arg) {
     if (arg == mp_const_false) {
         return 0;
     } else if (arg == mp_const_true) {
@@ -161,7 +161,7 @@ mp_int_t mp_obj_hash(mp_obj_t o_in) {
         return mp_obj_str_get_hash(o_in);
     } else if (MP_OBJ_IS_TYPE(o_in, &mp_type_NoneType)) {
         return (mp_int_t)o_in;
-    } else if (MP_OBJ_IS_TYPE(o_in, &mp_type_fun_native) || MP_OBJ_IS_TYPE(o_in, &mp_type_fun_bc)) {
+    } else if (MP_OBJ_IS_FUN(o_in)) {
         return (mp_int_t)o_in;
     } else if (MP_OBJ_IS_TYPE(o_in, &mp_type_tuple)) {
         return mp_obj_tuple_hash(o_in);
@@ -308,7 +308,7 @@ void mp_obj_get_complex(mp_obj_t arg, mp_float_t *real, mp_float_t *imag) {
 #endif
 #endif
 
-void mp_obj_get_array(mp_obj_t o, uint *len, mp_obj_t **items) {
+void mp_obj_get_array(mp_obj_t o, mp_uint_t *len, mp_obj_t **items) {
     if (MP_OBJ_IS_TYPE(o, &mp_type_tuple)) {
         mp_obj_tuple_get(o, len, items);
     } else if (MP_OBJ_IS_TYPE(o, &mp_type_list)) {
@@ -318,24 +318,16 @@ void mp_obj_get_array(mp_obj_t o, uint *len, mp_obj_t **items) {
     }
 }
 
-void mp_obj_get_array_fixed_n(mp_obj_t o, uint len, mp_obj_t **items) {
-    if (MP_OBJ_IS_TYPE(o, &mp_type_tuple) || MP_OBJ_IS_TYPE(o, &mp_type_list)) {
-        uint seq_len;
-        if (MP_OBJ_IS_TYPE(o, &mp_type_tuple)) {
-            mp_obj_tuple_get(o, &seq_len, items);
-        } else {
-            mp_obj_list_get(o, &seq_len, items);
-        }
-        if (seq_len != len) {
-            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "requested length %d but object has length %d", len, seq_len));
-        }
-    } else {
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_TypeError, "object '%s' is not a tuple or list", mp_obj_get_type_str(o)));
+void mp_obj_get_array_fixed_n(mp_obj_t o, mp_uint_t len, mp_obj_t **items) {
+    mp_uint_t seq_len;
+    mp_obj_get_array(o, &seq_len, items);
+    if (seq_len != len) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "requested length %d but object has length %d", len, seq_len));
     }
 }
 
 // is_slice determines whether the index is a slice index
-uint mp_get_index(const mp_obj_type_t *type, mp_uint_t len, mp_obj_t index, bool is_slice) {
+mp_uint_t mp_get_index(const mp_obj_type_t *type, mp_uint_t len, mp_obj_t index, bool is_slice) {
     mp_int_t i;
     if (MP_OBJ_IS_SMALL_INT(index)) {
         i = MP_OBJ_SMALL_INT_VALUE(index);
@@ -414,7 +406,7 @@ mp_obj_t mp_identity(mp_obj_t self) {
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_identity_obj, mp_identity);
 
-bool mp_get_buffer(mp_obj_t obj, mp_buffer_info_t *bufinfo, int flags) {
+bool mp_get_buffer(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
     mp_obj_type_t *type = mp_obj_get_type(obj);
     if (type->buffer_p.get_buffer == NULL) {
         return false;
@@ -426,7 +418,7 @@ bool mp_get_buffer(mp_obj_t obj, mp_buffer_info_t *bufinfo, int flags) {
     return true;
 }
 
-void mp_get_buffer_raise(mp_obj_t obj, mp_buffer_info_t *bufinfo, int flags) {
+void mp_get_buffer_raise(mp_obj_t obj, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
     if (!mp_get_buffer(obj, bufinfo, flags)) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "object with buffer protocol required"));
     }

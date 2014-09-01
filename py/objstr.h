@@ -26,10 +26,9 @@
 
 typedef struct _mp_obj_str_t {
     mp_obj_base_t base;
-    // XXX here we assume the hash size is 16 bits (it is at the moment; see qstr.c)
-    mp_uint_t hash : 16;
+    mp_uint_t hash;
     // len == number of bytes used in data, alloc = len + 1 because (at the moment) we also append a null byte
-    mp_uint_t len : 16;
+    mp_uint_t len;
     const byte *data;
 } mp_obj_str_t;
 
@@ -51,13 +50,13 @@ typedef struct _mp_obj_str_t {
     { str_data = qstr_data(MP_OBJ_QSTR_VALUE(str_obj_in), &str_len); } \
     else { str_len = ((mp_obj_str_t*)str_obj_in)->len; str_data = ((mp_obj_str_t*)str_obj_in)->data; }
 
-mp_obj_t mp_obj_str_format(uint n_args, const mp_obj_t *args);
-mp_obj_t mp_obj_new_str_of_type(const mp_obj_type_t *type, const byte* data, uint len);
+mp_obj_t mp_obj_str_format(mp_uint_t n_args, const mp_obj_t *args);
+mp_obj_t mp_obj_new_str_of_type(const mp_obj_type_t *type, const byte* data, mp_uint_t len);
 
-mp_obj_t mp_obj_str_binary_op(int op, mp_obj_t lhs_in, mp_obj_t rhs_in);
-mp_int_t mp_obj_str_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, int flags);
+mp_obj_t mp_obj_str_binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in);
+mp_int_t mp_obj_str_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags);
 
-const byte *str_index_to_ptr(const mp_obj_type_t *type, const byte *self_data, uint self_len,
+const byte *str_index_to_ptr(const mp_obj_type_t *type, const byte *self_data, mp_uint_t self_len,
                              mp_obj_t index, bool is_slice);
 
 MP_DECLARE_CONST_FUN_OBJ(str_encode_obj);

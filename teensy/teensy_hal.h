@@ -1,10 +1,11 @@
+#include <mk20dx128.h>
 
 #ifdef  USE_FULL_ASSERT
   #define assert_param(expr) ((expr) ? (void)0 : assert_failed((uint8_t *)__FILE__, __LINE__))
   void assert_failed(uint8_t* file, uint32_t line);
 #else
   #define assert_param(expr) ((void)0)
-#endif /* USE_FULL_ASSERT */    
+#endif /* USE_FULL_ASSERT */
 
 #define FTM0    ((FTM_TypeDef *)&FTM0_SC)
 #define FTM1    ((FTM_TypeDef *)&FTM1_SC)
@@ -112,9 +113,7 @@ typedef struct {
 #define GPIO_AF6_I2C1   6
 #define GPIO_AF7_FTM1   7
 
-
-__attribute__(( always_inline )) static inline void __WFI(void)
-{
+__attribute__(( always_inline )) static inline void __WFI(void) {
   __asm volatile ("wfi");
 }
 

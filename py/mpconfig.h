@@ -111,8 +111,13 @@
 #define MICROPY_EMIT_INLINE_THUMB (0)
 #endif
 
+// Whether to emit ARM native code
+#ifndef MICROPY_EMIT_ARM
+#define MICROPY_EMIT_ARM (0)
+#endif
+
 // Convenience definition for whether any native emitter is enabled
-#define MICROPY_EMIT_NATIVE (MICROPY_EMIT_X64 || MICROPY_EMIT_THUMB)
+#define MICROPY_EMIT_NATIVE (MICROPY_EMIT_X64 || MICROPY_EMIT_THUMB || MICROPY_EMIT_ARM)
 
 /*****************************************************************************/
 /* Compiler configuration                                                    */
@@ -427,6 +432,12 @@ typedef double mp_float_t;
 // Ensure we don't accidentally set both endiannesses
 #if MP_ENDIANNESS_BIG
 #define MP_ENDIANNESS_LITTLE (0)
+#endif
+
+// Make a pointer to RAM callable (eg set lower bit for Thumb code)
+// (This scheme won't work if we want to mix Thumb and normal ARM code.)
+#ifndef MICROPY_MAKE_POINTER_CALLABLE
+#define MICROPY_MAKE_POINTER_CALLABLE(p) (p)
 #endif
 
 // printf format spec to use for mp_int_t and friends

@@ -46,14 +46,14 @@
 #define DEBUG_printf(...) (void)0
 #endif
 
-STATIC mp_obj_t static_class_method_make_new(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args);
+STATIC mp_obj_t static_class_method_make_new(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args);
 
 /******************************************************************************/
 // instance object
 
 #define is_instance_type(type) ((type)->make_new == instance_make_new)
 #define is_native_type(type) ((type)->make_new != instance_make_new)
-mp_obj_t instance_make_new(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args);
+mp_obj_t instance_make_new(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args);
 STATIC void instance_convert_return_attr(mp_obj_t self, const mp_obj_type_t *type, mp_obj_t member, mp_obj_t *dest);
 
 STATIC mp_obj_t mp_obj_new_instance(mp_obj_t class, uint subobjs) {
@@ -65,7 +65,7 @@ STATIC mp_obj_t mp_obj_new_instance(mp_obj_t class, uint subobjs) {
 }
 
 STATIC int instance_count_native_bases(const mp_obj_type_t *type, const mp_obj_type_t **last_native_base) {
-    uint len;
+    mp_uint_t len;
     mp_obj_t *items;
     mp_obj_tuple_get(type->bases_tuple, &len, &items);
 
@@ -166,7 +166,7 @@ STATIC void mp_obj_class_lookup(struct class_lookup_data  *lookup, const mp_obj_
             return;
         }
 
-        uint len;
+        mp_uint_t len;
         mp_obj_t *items;
         mp_obj_tuple_get(type->bases_tuple, &len, &items);
         if (len == 0) {
@@ -236,7 +236,7 @@ STATIC void instance_print(void (*print)(void *env, const char *fmt, ...), void 
     print(env, "<%s object at %p>", mp_obj_get_type_str(self_in), self_in);
 }
 
-mp_obj_t instance_make_new(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+mp_obj_t instance_make_new(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     assert(MP_OBJ_IS_TYPE(self_in, &mp_type_type));
     mp_obj_type_t *self = self_in;
 
@@ -327,7 +327,7 @@ STATIC const qstr unary_op_method_name[] = {
     [MP_UNARY_OP_NOT] = MP_QSTR_, // don't need to implement this, used to make sure array has full size
 };
 
-STATIC mp_obj_t instance_unary_op(int op, mp_obj_t self_in) {
+STATIC mp_obj_t instance_unary_op(mp_uint_t op, mp_obj_t self_in) {
     mp_obj_instance_t *self = self_in;
     qstr op_name = unary_op_method_name[op];
     /* Still try to lookup native slot
@@ -381,11 +381,12 @@ STATIC const qstr binary_op_method_name[] = {
     MP_BINARY_OP_INPLACE_MODULO,
     MP_BINARY_OP_INPLACE_POWER,*/
     [MP_BINARY_OP_LESS] = MP_QSTR___lt__,
-    /*MP_BINARY_OP_MORE,
-    MP_BINARY_OP_EQUAL,
-    MP_BINARY_OP_LESS_EQUAL,
-    MP_BINARY_OP_MORE_EQUAL,
-    MP_BINARY_OP_NOT_EQUAL,
+    [MP_BINARY_OP_MORE] = MP_QSTR___gt__,
+    [MP_BINARY_OP_EQUAL] = MP_QSTR___eq__,
+    [MP_BINARY_OP_LESS_EQUAL] = MP_QSTR___le__,
+    [MP_BINARY_OP_MORE_EQUAL] = MP_QSTR___ge__,
+    /*
+    MP_BINARY_OP_NOT_EQUAL, // a != b calls a == b and inverts result
     */
     [MP_BINARY_OP_IN] = MP_QSTR___contains__,
     /*
@@ -420,7 +421,7 @@ STATIC void instance_convert_return_attr(mp_obj_t self, const mp_obj_type_t *typ
     }
 }
 
-STATIC mp_obj_t instance_binary_op(int op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+STATIC mp_obj_t instance_binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     // Note: For ducktyping, CPython does not look in the instance members or use
     // __getattr__ or __getattribute__.  It only looks in the class dictionary.
     mp_obj_instance_t *lhs = lhs_in;
@@ -582,7 +583,7 @@ STATIC mp_obj_t instance_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value
     }
 }
 
-STATIC mp_obj_t instance_call(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t instance_call(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_obj_instance_t *self = self_in;
     mp_obj_t member[2] = {MP_OBJ_NULL};
     struct class_lookup_data lookup = {
@@ -642,7 +643,7 @@ STATIC void type_print(void (*print)(void *env, const char *fmt, ...), void *env
     print(env, "<class '%s'>", qstr_str(self->name));
 }
 
-STATIC mp_obj_t type_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t type_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, 3, false);
 
     switch (n_args) {
@@ -660,7 +661,7 @@ STATIC mp_obj_t type_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp
     }
 }
 
-STATIC mp_obj_t type_call(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t type_call(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     // instantiate an instance of a class
 
     mp_obj_type_t *self = self_in;
@@ -724,7 +725,7 @@ STATIC bool type_store_attr(mp_obj_t self_in, qstr attr, mp_obj_t value) {
     return false;
 }
 
-STATIC mp_obj_t type_binary_op(int op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+STATIC mp_obj_t type_binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     switch (op) {
         case MP_BINARY_OP_EQUAL:
             // Types can be equal only if it's the same type structure,
@@ -754,7 +755,7 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
     // TODO might need to make a copy of locals_dict; at least that's how CPython does it
 
     // Basic validation of base classes
-    uint len;
+    mp_uint_t len;
     mp_obj_t *items;
     mp_obj_tuple_get(bases_tuple, &len, &items);
     for (uint i = 0; i < len; i++) {
@@ -791,7 +792,7 @@ mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict) 
     mp_map_elem_t *elem = mp_map_lookup(locals_map, MP_OBJ_NEW_QSTR(MP_QSTR___new__), MP_MAP_LOOKUP);
     if (elem != NULL) {
         // __new__ slot exists; check if it is a function
-        if (MP_OBJ_IS_TYPE(elem->value, &mp_type_fun_native) || MP_OBJ_IS_TYPE(elem->value, &mp_type_fun_bc)) {
+        if (MP_OBJ_IS_FUN(elem->value)) {
             // __new__ is a function, wrap it in a staticmethod decorator
             elem->value = static_class_method_make_new((mp_obj_t)&mp_type_staticmethod, 1, 0, &elem->value);
         }
@@ -818,7 +819,7 @@ STATIC void super_print(void (*print)(void *env, const char *fmt, ...), void *en
     print(env, ">");
 }
 
-STATIC mp_obj_t super_make_new(mp_obj_t type_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t super_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     if (n_args != 2 || n_kw != 0) {
         // 0 arguments are turned into 2 in the compiler
         // 1 argument is not yet implemented
@@ -841,7 +842,7 @@ STATIC void super_load_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         return;
     }
 
-    uint len;
+    mp_uint_t len;
     mp_obj_t *items;
     mp_obj_tuple_get(type->bases_tuple, &len, &items);
     struct class_lookup_data lookup = {
@@ -900,7 +901,7 @@ bool mp_obj_is_subclass_fast(mp_const_obj_t object, mp_const_obj_t classinfo) {
         }
 
         // get the base objects (they should be type objects)
-        uint len;
+        mp_uint_t len;
         mp_obj_t *items;
         mp_obj_tuple_get(self->bases_tuple, &len, &items);
         if (len == 0) {
@@ -920,7 +921,7 @@ bool mp_obj_is_subclass_fast(mp_const_obj_t object, mp_const_obj_t classinfo) {
 }
 
 STATIC mp_obj_t mp_obj_is_subclass(mp_obj_t object, mp_obj_t classinfo) {
-    uint len;
+    mp_uint_t len;
     mp_obj_t *items;
     if (MP_OBJ_IS_TYPE(classinfo, &mp_type_type)) {
         len = 1;
@@ -967,7 +968,7 @@ mp_obj_t mp_instance_cast_to_native_base(mp_const_obj_t self_in, mp_const_obj_t 
 /******************************************************************************/
 // staticmethod and classmethod types (probably should go in a different file)
 
-STATIC mp_obj_t static_class_method_make_new(mp_obj_t self_in, uint n_args, uint n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t static_class_method_make_new(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     assert(self_in == &mp_type_staticmethod || self_in == &mp_type_classmethod);
 
     if (n_args != 1 || n_kw != 0) {

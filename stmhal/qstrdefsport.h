@@ -39,7 +39,6 @@ Q(disable_irq)
 Q(enable_irq)
 Q(stop)
 Q(standby)
-Q(source_dir)
 Q(main)
 Q(usb_mode)
 Q(sync)
@@ -68,6 +67,7 @@ Q(/flash/lib)
 Q(/sd)
 Q(/sd/lib)
 Q(millis)
+Q(micros)
 
 // for file class
 Q(seek)
@@ -266,6 +266,7 @@ Q(urandom)
 // for time module
 Q(time)
 Q(localtime)
+Q(mktime)
 Q(sleep)
 
 // for input
@@ -281,6 +282,32 @@ Q(get)
 Q(pixel)
 Q(text)
 Q(show)
+
+// for WIZnet5k class
+#if MICROPY_HW_ENABLE_WIZNET5K
+Q(wiznet5k)
+Q(WIZnet5k)
+Q(regs)
+Q(ipaddr)
+Q(socket)
+Q(family)
+Q(type)
+Q(fileno)
+Q(close)
+Q(bind)
+Q(listen)
+Q(accept)
+Q(connect)
+Q(disconnect)
+Q(send)
+Q(recv)
+Q(sendto)
+Q(recvfrom)
+Q(gethostbyname)
+Q(AF_INET)
+Q(SOCK_STREAM)
+Q(SOCK_DGRAM)
+#endif
 
 // for stm module
 Q(stm)

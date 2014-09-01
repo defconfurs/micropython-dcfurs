@@ -34,7 +34,6 @@ extern const mp_obj_module_t select_module;
 
 // additional helper functions exported by the modules
 
-mp_uint_t mod_time_year_day(mp_uint_t year, mp_uint_t month, mp_uint_t date);
 mp_uint_t mod_time_seconds_since_2000(mp_uint_t year, mp_uint_t month, mp_uint_t date, mp_uint_t hour, mp_uint_t minute, mp_uint_t second);
 
 int mod_wlan_get_fd_state(int fd);
