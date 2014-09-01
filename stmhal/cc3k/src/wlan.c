@@ -39,8 +39,6 @@
 //! @{
 //
 //*****************************************************************************
-#include "mpconfigport.h"
-#if MICROPY_HW_ENABLE_CC3K
 
 #include <string.h>
 #include "wlan.h"
@@ -1252,4 +1250,3 @@ INT32 wlan_smart_config_process()
 //! @}
 //
 //*****************************************************************************
-#endif // MICROPY_HW_ENABLE_CC3K

@@ -32,8 +32,6 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#include "mpconfigport.h"
-#if MICROPY_HW_ENABLE_CC3K
 
 #include <string.h>
 #include "netapp.h"
@@ -459,4 +457,3 @@ INT32 netapp_set_debug_level(UINT32 ulLevel)
 
 }
 #endif
-#endif // MICROPY_HW_ENABLE_CC3K

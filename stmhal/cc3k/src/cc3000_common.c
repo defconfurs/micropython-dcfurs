@@ -43,8 +43,6 @@
 * Include files
 *
 *****************************************************************************/
-#include "mpconfigport.h"
-#if MICROPY_HW_ENABLE_CC3K
 
 #include "cc3000_common.h"
 #include "socket.h"
@@ -164,4 +162,3 @@ UINT32 STREAM_TO_UINT32_f(CHAR* p, UINT16 offset)
 //! @}
 //
 //*****************************************************************************
-#endif // MICROPY_HW_ENABLE_CC3K

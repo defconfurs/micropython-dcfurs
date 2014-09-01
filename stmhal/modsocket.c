@@ -16,17 +16,9 @@
 #include "portmodules.h"
 
 #include "hci.h"
-#include "ccspi.h"
-#include "wlan.h"
 #include "socket.h"
-#include "nvmem.h"
-#include "netapp.h"
-#include "evnt_handler.h"
-#include "patch_prog.h"
 #include "inet_ntop.h"
 #include "inet_pton.h"
-
-#if MICROPY_HW_ENABLE_CC3K
 
 #define EPIPE               (32)
 #define MAX_FD              (8)
@@ -360,5 +352,3 @@ const mp_obj_module_t socket_module = {
     .name = MP_QSTR_socket,
     .globals = (mp_obj_dict_t*)&socket_module_globals,
 };
-
-#endif // MICROPY_HW_ENABLE_CC3K

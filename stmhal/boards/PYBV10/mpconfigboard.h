@@ -17,7 +17,6 @@
 #define MICROPY_HW_ENABLE_I2C1      (1)
 #define MICROPY_HW_ENABLE_SPI1      (1)
 #define MICROPY_HW_ENABLE_SPI3      (0)
-#define MICROPY_HW_ENABLE_CC3K      (1)
 
 // USRSW has no pullup or pulldown, and pressing the switch makes the input go low
 #define MICROPY_HW_USRSW_PIN        (pin_B3)
@@ -38,10 +37,3 @@
 #define MICROPY_HW_SDCARD_DETECT_PIN        (pin_A8)
 #define MICROPY_HW_SDCARD_DETECT_PULL       (GPIO_PULLUP)
 #define MICROPY_HW_SDCARD_DETECT_PRESENT    (GPIO_PIN_RESET)
-
-// CC3K WLAN
-#define MICROPY_HW_WLAN_PIN_CS      (pin_B12)   // Y5
-#define MICROPY_HW_WLAN_PIN_EN      (pin_B9)    // Y4
-#define MICROPY_HW_WLAN_PIN_IRQ     (pin_B8)    // Y3
-#define MICROPY_HW_WLAN_SPI_HANDLE  (SPIHandle2) // SPI on Y position (Y6=B13=SCK, Y7=B14=MISO, Y8=B15=MOSI)
-#define MICROPY_HW_WLAN_IRQ_LINE    (8)         // B8 on line 8

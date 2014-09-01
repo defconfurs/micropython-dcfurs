@@ -22,7 +22,6 @@ HAL_DIR=hal
 USBDEV_DIR=usbdev
 #USBHOST_DIR=usbhost
 FATFS_DIR=fatfs
-CC3K_DIR=cc3k
 DFU=../tools/dfu.py
 # may need to prefix dfu-util with sudo
 DFU_UTIL ?= dfu-util
@@ -39,7 +38,6 @@ INC += -I$(HAL_DIR)/inc
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/cdc_msc_hid/inc
 #INC += -I$(USBHOST_DIR)
 INC += -I$(FATFS_DIR)/src
-INC += -I$(CC3K_DIR)/inc
 
 CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
 CFLAGS = $(INC) -Wall -Werror -ansi -std=gnu99 -nostdlib $(CFLAGS_MOD) $(CFLAGS_CORTEX_M4) $(COPT)
@@ -119,9 +117,6 @@ SRC_C = \
 	servo.c \
 	dac.c \
 	adc.c \
-	modwlan.c \
-	modsocket.c \
-	modselect.c \
 
 SRC_S = \
 	startup_stm32f40xx.s \
@@ -186,7 +181,28 @@ SRC_FATFS = $(addprefix $(FATFS_DIR)/src/,\
 	option/ccsbcs.c \
 	)
 
-SRC_CC3K = $(addprefix $(CC3K_DIR)/src/,\
+ifeq ($(MICROPY_PY_WIZNET5K),1)
+WIZNET5K_DIR=drivers/wiznet5k
+INC += -I$(TOP)/$(WIZNET5K_DIR)
+CFLAGS_MOD += -DMICROPY_PY_WIZNET5K=1
+SRC_MOD += modwiznet5k.c
+SRC_MOD += $(addprefix $(WIZNET5K_DIR)/,\
+	ethernet/w5200/w5200.c \
+	ethernet/wizchip_conf.c \
+	ethernet/socket.c \
+	internet/dns/dns.c \
+	)
+endif
+
+ifeq ($(MICROPY_PY_CC3K),1)
+CC3K_DIR=cc3k
+INC += -I$(CC3K_DIR)/inc
+CFLAGS_MOD += -DMICROPY_PY_CC3K=1
+SRC_MOD += \
+	modwlan.c \
+	modsocket.c \
+	modselect.c
+SRC_MOD += $(addprefix $(CC3K_DIR)/src/,\
 	cc3000_common.c \
 	evnt_handler.c \
 	hci.c \
@@ -202,18 +218,6 @@ SRC_CC3K = $(addprefix $(CC3K_DIR)/src/,\
 #	patch.c \
 #	patch_prog.c \
 	)
-
-ifeq ($(MICROPY_PY_WIZNET5K),1)
-WIZNET5K_DIR=drivers/wiznet5k
-INC += -I$(TOP)/$(WIZNET5K_DIR)
-CFLAGS_MOD += -DMICROPY_PY_WIZNET5K=1
-SRC_MOD += modwiznet5k.c
-SRC_MOD += $(addprefix $(WIZNET5K_DIR)/,\
-	ethernet/w5200/w5200.c \
-	ethernet/wizchip_conf.c \
-	ethernet/socket.c \
-	internet/dns/dns.c \
-	)
 endif
 
 OBJ =
@@ -224,7 +228,6 @@ OBJ += $(addprefix $(BUILD)/, $(SRC_S:.s=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_HAL:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_USBDEV:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_FATFS:.c=.o))
-OBJ += $(addprefix $(BUILD)/, $(SRC_CC3K:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_MOD:.c=.o))
 OBJ += $(BUILD)/pins_$(BOARD).o
 

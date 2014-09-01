@@ -10,15 +10,8 @@
 #include "portmodules.h"
 
 #include "hci.h"
-#include "ccspi.h"
-#include "wlan.h"
 #include "socket.h"
-#include "nvmem.h"
 #include "netapp.h"
-#include "evnt_handler.h"
-#include "patch_prog.h"
-
-#if MICROPY_HW_ENABLE_CC3K
 
 #define MP_ASSERT_TYPE(obj, type)                       \
     do {                                                \
@@ -147,5 +140,3 @@ const mp_obj_module_t select_module = {
     .name = MP_QSTR_select,
     .globals = (mp_obj_dict_t*)&select_module_globals,
 };
-
-#endif // MICROPY_HW_ENABLE_CC3K

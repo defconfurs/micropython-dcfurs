@@ -56,6 +56,10 @@ extern unsigned char wlan_tx_buffer[];
 // Prototypes for the APIs.
 //
 //*****************************************************************************
+
+// the arguments must be of type pin_obj_t* and SPI_HandleTypeDef*
+extern void SpiInit(void *spi, const void *pin_cs, const void *pin_en, const void *pin_irq);
+
 extern void SpiOpen(gcSpiHandleRx pfRxHandler);
 extern void SpiClose(void);
 extern void SpiPauseSpi(void);

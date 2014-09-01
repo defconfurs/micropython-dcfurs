@@ -31,8 +31,6 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-#include "mpconfigport.h"
-#if MICROPY_HW_ENABLE_CC3K
 
 #include <string.h>
 
@@ -44,7 +42,6 @@
 #include "obj.h"
 #include "runtime.h"
 #include "pin.h"
-#include "genhdr/pins.h"
 #include "led.h"
 #include "extint.h"
 #include "spi.h"
@@ -58,14 +55,14 @@
 #define DEBUG_printf(args...) (void)0
 #endif
 
-#define PIN_CS              MICROPY_HW_WLAN_PIN_CS
-#define PIN_EN              MICROPY_HW_WLAN_PIN_EN
-#define PIN_IRQ             MICROPY_HW_WLAN_PIN_IRQ
-#define SPI_HANDLE          MICROPY_HW_WLAN_SPI_HANDLE
-#define IRQ_LINE            MICROPY_HW_WLAN_IRQ_LINE
+// these need to be set to valid values before anything in this file will work
+STATIC SPI_HandleTypeDef *SPI_HANDLE = NULL;
+STATIC const pin_obj_t *PIN_CS = NULL;
+STATIC const pin_obj_t *PIN_EN = NULL;
+STATIC const pin_obj_t *PIN_IRQ = NULL;
 
-#define CS_LOW()            HAL_GPIO_WritePin(PIN_CS.gpio, PIN_CS.pin_mask, GPIO_PIN_RESET)
-#define CS_HIGH()           HAL_GPIO_WritePin(PIN_CS.gpio, PIN_CS.pin_mask, GPIO_PIN_SET)
+#define CS_LOW()            HAL_GPIO_WritePin(PIN_CS->gpio, PIN_CS->pin_mask, GPIO_PIN_RESET)
+#define CS_HIGH()           HAL_GPIO_WritePin(PIN_CS->gpio, PIN_CS->pin_mask, GPIO_PIN_SET)
 
 #define READ                3
 #define WRITE               1
@@ -106,9 +103,18 @@ tSpiInformation sSpiInformation;
 char spi_buffer[CC3000_RX_BUFFER_SIZE];
 unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
 
-static const mp_obj_fun_native_t irq_callback_obj;
+STATIC const mp_obj_fun_builtin_t irq_callback_obj;
 void SpiWriteDataSynchronous(unsigned char *data, unsigned short size);
 void SpiReadDataSynchronous(unsigned char *data, unsigned short size);
+
+// set the pins to use to communicate with the CC3000
+// the arguments must be of type pin_obj_t* and SPI_HandleTypeDef*
+void SpiInit(void *spi, const void *pin_cs, const void *pin_en, const void *pin_irq) {
+    SPI_HANDLE = spi;
+    PIN_CS = pin_cs;
+    PIN_EN = pin_en;
+    PIN_IRQ = pin_irq;
+}
 
 void SpiClose(void)
 {
@@ -118,7 +124,7 @@ void SpiClose(void)
 
     tSLInformation.WlanInterruptDisable();
 
-    //HAL_SPI_DeInit(&SPI_HANDLE);
+    //HAL_SPI_DeInit(SPI_HANDLE);
 }
 
 void SpiOpen(gcSpiHandleRx pfRxHandler)
@@ -136,18 +142,18 @@ void SpiOpen(gcSpiHandleRx pfRxHandler)
     wlan_tx_buffer[CC3000_TX_BUFFER_SIZE - 1] = CC3000_BUFFER_MAGIC_NUMBER;
 
     /* SPI configuration */
-    SPI_HANDLE.Init.Mode              = SPI_MODE_MASTER;
-    SPI_HANDLE.Init.Direction         = SPI_DIRECTION_2LINES;
-    SPI_HANDLE.Init.DataSize          = SPI_DATASIZE_8BIT;
-    SPI_HANDLE.Init.CLKPolarity       = SPI_POLARITY_LOW;
-    SPI_HANDLE.Init.CLKPhase          = SPI_PHASE_2EDGE;
-    SPI_HANDLE.Init.NSS               = SPI_NSS_SOFT;
-    SPI_HANDLE.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-    SPI_HANDLE.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-    SPI_HANDLE.Init.TIMode            = SPI_TIMODE_DISABLED;
-    SPI_HANDLE.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
-    SPI_HANDLE.Init.CRCPolynomial     = 7;
-    spi_init(&SPI_HANDLE);
+    SPI_HANDLE->Init.Mode              = SPI_MODE_MASTER;
+    SPI_HANDLE->Init.Direction         = SPI_DIRECTION_2LINES;
+    SPI_HANDLE->Init.DataSize          = SPI_DATASIZE_8BIT;
+    SPI_HANDLE->Init.CLKPolarity       = SPI_POLARITY_LOW;
+    SPI_HANDLE->Init.CLKPhase          = SPI_PHASE_2EDGE;
+    SPI_HANDLE->Init.NSS               = SPI_NSS_SOFT;
+    SPI_HANDLE->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+    SPI_HANDLE->Init.FirstBit          = SPI_FIRSTBIT_MSB;
+    SPI_HANDLE->Init.TIMode            = SPI_TIMODE_DISABLED;
+    SPI_HANDLE->Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLED;
+    SPI_HANDLE->Init.CRCPolynomial     = 7;
+    spi_init(SPI_HANDLE);
 
     // configure wlan CS and EN pins
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -156,48 +162,48 @@ void SpiOpen(gcSpiHandleRx pfRxHandler)
     GPIO_InitStructure.Pull = GPIO_NOPULL;
     GPIO_InitStructure.Alternate = 0;
 
-    GPIO_InitStructure.Pin = PIN_CS.pin_mask;
-    HAL_GPIO_Init(PIN_CS.gpio, &GPIO_InitStructure);
+    GPIO_InitStructure.Pin = PIN_CS->pin_mask;
+    HAL_GPIO_Init(PIN_CS->gpio, &GPIO_InitStructure);
 
-    GPIO_InitStructure.Pin = PIN_EN.pin_mask;
-    HAL_GPIO_Init(PIN_EN.gpio, &GPIO_InitStructure);
+    GPIO_InitStructure.Pin = PIN_EN->pin_mask;
+    HAL_GPIO_Init(PIN_EN->gpio, &GPIO_InitStructure);
 
-    HAL_GPIO_WritePin(PIN_CS.gpio, PIN_CS.pin_mask, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(PIN_EN.gpio, PIN_EN.pin_mask, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(PIN_CS->gpio, PIN_CS->pin_mask, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(PIN_EN->gpio, PIN_EN->pin_mask, GPIO_PIN_RESET);
 
     /* do a dummy read, this ensures SCLK is low before
        actual communications start, it might be required */
     CS_LOW();
     uint8_t buf[1];
-    HAL_SPI_Receive(&SPI_HANDLE, buf, sizeof(buf), SPI_TIMEOUT);
+    HAL_SPI_Receive(SPI_HANDLE, buf, sizeof(buf), SPI_TIMEOUT);
     CS_HIGH();
 
     // register EXTI
-    extint_register((mp_obj_t)&PIN_IRQ, GPIO_MODE_IT_FALLING, GPIO_PULLUP, (mp_obj_t)&irq_callback_obj, true, NULL);
-    extint_enable(IRQ_LINE);
+    extint_register((mp_obj_t)PIN_IRQ, GPIO_MODE_IT_FALLING, GPIO_PULLUP, (mp_obj_t)&irq_callback_obj, true, NULL);
+    extint_enable(PIN_IRQ->pin);
 
-    DEBUG_printf("SpiOpen finished; IRQ.pin=%d IRQ_LINE=%d\n", PIN_IRQ.pin, IRQ_LINE);
+    DEBUG_printf("SpiOpen finished; IRQ.pin=%d IRQ_LINE=%d\n", PIN_IRQ->pin, PIN_IRQ->pin);
 }
 
 
 void SpiPauseSpi(void)
 {
-   extint_disable(IRQ_LINE);
+   extint_disable(PIN_IRQ->pin);
 }
 
 void SpiResumeSpi(void)
 {
-   extint_enable(IRQ_LINE);
+   extint_enable(PIN_IRQ->pin);
 }
 
 long ReadWlanInterruptPin(void)
 {
-    return HAL_GPIO_ReadPin(PIN_IRQ.gpio, PIN_IRQ.pin_mask);
+    return HAL_GPIO_ReadPin(PIN_IRQ->gpio, PIN_IRQ->pin_mask);
 }
 
 void WriteWlanPin(unsigned char val)
 {
-    HAL_GPIO_WritePin(PIN_EN.gpio, PIN_EN.pin_mask,
+    HAL_GPIO_WritePin(PIN_EN->gpio, PIN_EN->pin_mask,
             (WLAN_ENABLE)? GPIO_PIN_SET:GPIO_PIN_RESET);
 }
 
@@ -306,7 +312,7 @@ void SpiWriteDataSynchronous(unsigned char *data, unsigned short size)
 {
     DEBUG_printf("SpiWriteDataSynchronous(data=%p [%x %x %x %x], size=%u)\n", data, data[0], data[1], data[2], data[3], size);
     __disable_irq();
-    if (HAL_SPI_TransmitReceive(&SPI_HANDLE, data, data, size, SPI_TIMEOUT) != HAL_OK) {
+    if (HAL_SPI_TransmitReceive(SPI_HANDLE, data, data, size, SPI_TIMEOUT) != HAL_OK) {
         //BREAK();
     }
     __enable_irq();
@@ -317,7 +323,7 @@ void SpiReadDataSynchronous(unsigned char *data, unsigned short size)
 {
     memset(data, READ, size);
     __disable_irq();
-    if (HAL_SPI_TransmitReceive(&SPI_HANDLE, data, data, size, SPI_TIMEOUT) != HAL_OK) {
+    if (HAL_SPI_TransmitReceive(SPI_HANDLE, data, data, size, SPI_TIMEOUT) != HAL_OK) {
        //BREAK();
     }
     __enable_irq();
@@ -453,5 +459,3 @@ STATIC mp_obj_t irq_callback(mp_obj_t line)
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(irq_callback_obj, irq_callback);
-
-#endif // MICROPY_HW_ENABLE_CC3K

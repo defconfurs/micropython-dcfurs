@@ -10,6 +10,9 @@
 #include "objtuple.h"
 #include "runtime.h"
 #include "portmodules.h"
+#include "pin.h"
+#include "genhdr/pins.h"
+#include "spi.h"
 
 #include "hci.h"
 #include "ccspi.h"
@@ -17,8 +20,6 @@
 #include "nvmem.h"
 #include "netapp.h"
 #include "patch_prog.h"
-
-#if MICROPY_HW_ENABLE_CC3K
 
 #define IS_WLAN_SEC(sec) \
     (sec>WLAN_SEC_UNSEC && sec<=WLAN_SEC_WPA2)
@@ -56,7 +57,23 @@ STATIC void sWlanCallback(long lEventType, char * data, unsigned char length) {
     }
 }
 
-STATIC mp_obj_t modwlan_init(void) {
+/// \function init(spi, pin_cs, pin_en, pin_irq)
+/// Initialise the CC3000 using the given SPI bus and pins.
+// Note: pins were originally hard-coded to:
+//      PYBv1.0: init(pyb.SPI(2), pyb.Pin.board.Y5, pyb.Pin.board.Y4, pyb.Pin.board.Y3)
+//        [SPI on Y position; Y6=B13=SCK, Y7=B14=MISO, Y8=B15=MOSI]
+//
+//      STM32F4DISC: init(pyb.SPI(2), pyb.Pin.cpu.A15, pyb.Pin.cpu.B10, pyb.Pin.cpu.B11)
+STATIC mp_obj_t modwlan_init(mp_uint_t n_args, const mp_obj_t *args) {
+    // set the pins to use
+    SpiInit(
+        spi_get_handle(args[0]),
+        pin_find(args[1]),
+        pin_find(args[2]),
+        pin_find(args[3])
+
+    );
+
     // initialize and start the module
     wlan_init(sWlanCallback, NULL, NULL, NULL,
             ReadWlanInterruptPin, SpiResumeSpi, SpiPauseSpi, WriteWlanPin);
@@ -180,7 +197,7 @@ STATIC mp_obj_t modwlan_patch_program(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0 (modwlan_init_obj,         modwlan_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modwlan_init_obj, 4, 4, modwlan_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0 (modwlan_ifconfig_obj,     modwlan_ifconfig);
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(modwlan_connect_obj, 1,   modwlan_connect);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0 (modwlan_disconnect_obj,   modwlan_disconnect);
@@ -220,5 +237,3 @@ const mp_obj_module_t wlan_module = {
     .name = MP_QSTR_wlan,
     .globals = (mp_obj_dict_t*)&wlan_module_globals,
 };
-
-#endif //MICROPY_HW_ENABLE_CC3K

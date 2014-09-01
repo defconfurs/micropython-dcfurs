@@ -76,18 +76,6 @@ extern const struct _mp_obj_module_t pyb_module;
 extern const struct _mp_obj_module_t stm_module;
 extern const struct _mp_obj_module_t time_module;
 
-#if MICROPY_HW_ENABLE_CC3K
-extern const struct _mp_obj_module_t wlan_module;
-extern const struct _mp_obj_module_t socket_module;
-extern const struct _mp_obj_module_t select_module;
-#define MICROPY_PORT_BUILTIN_MODULES_CC3K \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_wlan), (mp_obj_t)&wlan_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_select), (mp_obj_t)&select_module },
-#else
-#define MICROPY_PORT_BUILTIN_MODULES_CC3K
-#endif
-
 #if MICROPY_PY_WIZNET5K
 extern const struct _mp_obj_module_t mp_module_wiznet5k;
 #define MICROPY_PY_WIZNET5K_DEF { MP_OBJ_NEW_QSTR(MP_QSTR_wiznet5k), (mp_obj_t)&mp_module_wiznet5k },
@@ -95,13 +83,25 @@ extern const struct _mp_obj_module_t mp_module_wiznet5k;
 #define MICROPY_PY_WIZNET5K_DEF
 #endif
 
+#if MICROPY_PY_CC3K
+extern const struct _mp_obj_module_t wlan_module;
+extern const struct _mp_obj_module_t socket_module;
+extern const struct _mp_obj_module_t select_module;
+#define MICROPY_PY_CC3K_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_wlan), (mp_obj_t)&wlan_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&socket_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_select), (mp_obj_t)&select_module },
+#else
+#define MICROPY_PY_CC3K_DEF
+#endif
+
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&os_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_pyb), (mp_obj_t)&pyb_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_stm), (mp_obj_t)&stm_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&time_module }, \
-    MICROPY_PORT_BUILTIN_MODULES_CC3K \
     MICROPY_PY_WIZNET5K_DEF \
+    MICROPY_PY_CC3K_DEF \
 
 // extra constants
 #define MICROPY_PORT_CONSTANTS \
@@ -155,6 +155,9 @@ static inline mp_uint_t disable_irq(void) {
 
 #define USE_DEVICE_MODE
 //#define USE_HOST_MODE
+
+// board specific definitions
+#include "mpconfigboard.h"
 
 // We need to provide a declaration/definition of alloca()
 #include <alloca.h>
