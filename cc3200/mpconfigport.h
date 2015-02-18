@@ -77,6 +77,7 @@
 #define MICROPY_PY_BUILTINS_TIMEOUTERROR            (1)
 #define MICROPY_PY_ALL_SPECIAL_METHODS              (1)
 #ifndef DEBUG
+#define MICROPY_MODULE_EXTERN                       (1)
 #define MICROPY_PY_BUILTINS_STR_UNICODE             (1)
 #define MICROPY_PY_BUILTINS_STR_SPLITLINES          (1)
 #define MICROPY_PY_BUILTINS_MEMORYVIEW              (1)

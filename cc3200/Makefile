@@ -33,7 +33,11 @@ else
 ifeq ($(BTARGET), bootloader)
 include bootmgr/bootloader.mk
 else
+ifeq ($(BTARGET), modx)
+include mods/modx/modx.mk
+else
 $(error Invalid BTARGET specified)
+endif
 endif
 endif
 
