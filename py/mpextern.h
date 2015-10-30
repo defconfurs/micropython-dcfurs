@@ -77,7 +77,4 @@ void mp_extern_load(const char *ext_name, mp_obj_dict_t *globals);
 // to be implemented per-port
 const byte *mp_extern_load_binary(const char *ext_name);
 
-// entry point for the extern binary
-void init(const mp_ext_table_t *et);
-
 #endif // __MICROPY_INCLUDED_PY_MPEXTERN_H__
