@@ -8,22 +8,10 @@ addons:
     sources:
       - deadsnakes # for python3.4
       - ubuntu-toolchain-r-test
-      #- debian-sid
-      - lucid
-      - mariadb-10.0
-      - mongodb-upstart
-      - mongodb-precise
-      #- mopidy-stable
-      - partner-precise
-      - pgavin-ghdl
-      - pov-wkhtmltopdf
-      - precise-pgdg-9.5
-      - pypy
-      - pythonxy-devel
-      #- r-packages-trusty
-      - rabbitmq-precise
-      #- rabbitmq-testing
-      - ubuntu-sdk-team
+      - debian-sid
+      - mopidy-stable
+      - r-packages-trusty
+      - rabbitmq-testing
       # no arm-none-eabi-gcc
       #- extras-precise
       #- r-packages-precise
@@ -45,6 +33,19 @@ addons:
       #- llvm-toolchain-precise-3.5
       #- llvm-toolchain-precise-3.6
       #- llvm-toolchain-precise-3.7
+
+      #- lucid
+      #- mariadb-10.0
+      #- mongodb-upstart
+      #- mongodb-precise
+      #- partner-precise
+      #- pgavin-ghdl
+      #- pov-wkhtmltopdf
+      #- precise-pgdg-9.5
+      #- pypy
+      #- pythonxy-devel
+      #- rabbitmq-precise
+      #- ubuntu-sdk-team
     packages:
       - python3
       - python3.4
