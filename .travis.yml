@@ -33,8 +33,6 @@ before_script:
   - pip install --user cpp-coveralls
 
 script:
-  - which gcc-4.7
-  - which arm-none-eabi-gcc
   - make -C minimal test CC=gcc-4.7
   - make -C unix deplibs CC=gcc-4.7
   - make -C unix CC=gcc-4.7
