@@ -8,41 +8,43 @@ addons:
     sources:
       - deadsnakes # for python3.4
       - ubuntu-toolchain-r-test
-      - avsm
-      - boost-latest
-      - cassou-emacs
-      - chef-current-precise
-      - chef-stable-precise
-      - couchbase-precise
       #- debian-sid
-      - gammu
-      - gearman-developers
-      - george-edison55-precise-backports
-      - hvr-ghc
-      - kalakris-cmake
-      - kubuntu-backports
-      - llvm-toolchain-precise
-      - llvm-toolchain-precise-3.5
-      - llvm-toolchain-precise-3.6
-      - llvm-toolchain-precise-3.7
-      #- lucid
-      #- mariadb-10.0
-      #- mongodb-upstart
-      #- mongodb-precise
+      - lucid
+      - mariadb-10.0
+      - mongodb-upstart
+      - mongodb-precise
       #- mopidy-stable
-      #- partner-precise
-      #- pgavin-ghdl
-      #- pov-wkhtmltopdf
-      #- precise-pgdg-9.5
-      #- pypy
-      #- pythonxy-devel
+      - partner-precise
+      - pgavin-ghdl
+      - pov-wkhtmltopdf
+      - precise-pgdg-9.5
+      - pypy
+      - pythonxy-devel
       #- r-packages-trusty
-      #- rabbitmq-precise
+      - rabbitmq-precise
       #- rabbitmq-testing
-      #- ubuntu-sdk-team
+      - ubuntu-sdk-team
       # no arm-none-eabi-gcc
       #- extras-precise
       #- r-packages-precise
+
+      #- avsm
+      #- boost-latest
+      #- cassou-emacs
+      #- chef-current-precise
+      #- chef-stable-precise
+      #- couchbase-precise
+
+      #- gammu
+      #- gearman-developers
+      #- george-edison55-precise-backports
+      #- hvr-ghc
+      #- kalakris-cmake
+      #- kubuntu-backports
+      #- llvm-toolchain-precise
+      #- llvm-toolchain-precise-3.5
+      #- llvm-toolchain-precise-3.6
+      #- llvm-toolchain-precise-3.7
     packages:
       - python3
       - python3.4
