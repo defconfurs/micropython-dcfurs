@@ -6,7 +6,7 @@ compiler:
 addons:
   apt:
     sources:
-      #- deadsnakes
+      - deadsnakes # for python3.4
       - ubuntu-toolchain-r-test
       #- avsm
       #- boost-latest
@@ -15,7 +15,7 @@ addons:
       #- chef-stable-precise
       #- couchbase-precise
       #- debian-sid
-      #- extras-precise
+      - extras-precise
       #- gammu
       #- gearman-developers
       #- george-edison55-precise-backports
@@ -37,7 +37,7 @@ addons:
       #- precise-pgdg-9.5
       #- pypy
       #- pythonxy-devel
-      #- r-packages-precise
+      - r-packages-precise
       #- r-packages-trusty
       #- rabbitmq-precise
       #- rabbitmq-testing
