@@ -10,10 +10,10 @@ addons:
       - ubuntu-toolchain-r-test
 
       # arm-none-eabi-gcc is somewhere here
-      #- debian-sid
-      #- mopidy-stable
-      - r-packages-trusty
-      - rabbitmq-testing
+      - debian-sid
+      - mopidy-stable
+      #- r-packages-trusty
+      #- rabbitmq-testing
 
       # no arm-none-eabi-gcc
       #- extras-precise
