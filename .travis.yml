@@ -10,10 +10,8 @@ addons:
       - ubuntu-toolchain-r-test
 
       # arm-none-eabi-gcc is somewhere here
-      - debian-sid
+      #- debian-sid
       - mopidy-stable
-      #- r-packages-trusty
-      #- rabbitmq-testing
 
       # no arm-none-eabi-gcc
       #- extras-precise
@@ -49,6 +47,9 @@ addons:
       #- pythonxy-devel
       #- rabbitmq-precise
       #- ubuntu-sdk-team
+
+      #- r-packages-trusty
+      #- rabbitmq-testing
     packages:
       - python3
       - python3.4
