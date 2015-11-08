@@ -8,24 +8,23 @@ addons:
     sources:
       - deadsnakes # for python3.4
       - ubuntu-toolchain-r-test
-      #- avsm
-      #- boost-latest
-      #- cassou-emacs
-      #- chef-current-precise
-      #- chef-stable-precise
-      #- couchbase-precise
+      - avsm
+      - boost-latest
+      - cassou-emacs
+      - chef-current-precise
+      - chef-stable-precise
+      - couchbase-precise
       #- debian-sid
-      - extras-precise
-      #- gammu
-      #- gearman-developers
-      #- george-edison55-precise-backports
-      #- hvr-ghc
-      #- kalakris-cmake
-      #- kubuntu-backports
-      #- llvm-toolchain-precise
-      #- llvm-toolchain-precise-3.5
-      #- llvm-toolchain-precise-3.6
-      #- llvm-toolchain-precise-3.7
+      - gammu
+      - gearman-developers
+      - george-edison55-precise-backports
+      - hvr-ghc
+      - kalakris-cmake
+      - kubuntu-backports
+      - llvm-toolchain-precise
+      - llvm-toolchain-precise-3.5
+      - llvm-toolchain-precise-3.6
+      - llvm-toolchain-precise-3.7
       #- lucid
       #- mariadb-10.0
       #- mongodb-upstart
@@ -37,11 +36,13 @@ addons:
       #- precise-pgdg-9.5
       #- pypy
       #- pythonxy-devel
-      - r-packages-precise
       #- r-packages-trusty
       #- rabbitmq-precise
       #- rabbitmq-testing
       #- ubuntu-sdk-team
+      # no arm-none-eabi-gcc
+      #- extras-precise
+      #- r-packages-precise
     packages:
       - python3
       - python3.4
