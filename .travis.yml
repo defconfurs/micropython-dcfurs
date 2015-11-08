@@ -8,10 +8,13 @@ addons:
     sources:
       - deadsnakes # for python3.4
       - ubuntu-toolchain-r-test
-      - debian-sid
-      - mopidy-stable
+
+      # arm-none-eabi-gcc is somewhere here
+      #- debian-sid
+      #- mopidy-stable
       - r-packages-trusty
       - rabbitmq-testing
+
       # no arm-none-eabi-gcc
       #- extras-precise
       #- r-packages-precise
