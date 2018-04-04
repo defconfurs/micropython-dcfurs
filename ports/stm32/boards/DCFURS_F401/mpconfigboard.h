@@ -44,8 +44,8 @@ extern struct _spi_bdev_t spi_bdev;
 // USRSW has no pullup or pulldown. Pressing the button makes the input go high.
 #define MICROPY_HW_USRSW_PIN        (pin_C14)
 #define MICROPY_HW_USRSW_PULL       (GPIO_PULLDOWN)
-#define MICROPY_HW_USRSW_EXTI_MODE  (GPIO_MODE_IT_FALLING)
-#define MICROPY_HW_USRSW_PRESSED    (0)
+#define MICROPY_HW_USRSW_EXTI_MODE  (GPIO_MODE_IT_RISING)
+#define MICROPY_HW_USRSW_PRESSED    (1)
 
 // Make pretend that we have an LED
 #define MICROPY_HW_LED1             (pin_C13)
