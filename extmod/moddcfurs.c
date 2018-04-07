@@ -142,7 +142,7 @@ STATIC mp_obj_t dcfurs_set_pixel(mp_obj_t xobj, mp_obj_t yobj, mp_obj_t vobj)
 
     /* Set a dimming intensity by configuring at which step we turn the pixel off. */
     if (mp_obj_is_integer(vobj)) {
-        step = (mp_obj_get_int(vobj) * DCF_DIMMING_STEPS) / 256;
+        step = (mp_obj_get_int(vobj) * DCF_DIMMING_STEPS + 128) / 256;
         if (step == 0) step = 1;
         if (step < DCF_DIMMING_STEPS) {
             row->pxdata[step] |= (1 << x);
