@@ -1,6 +1,8 @@
 #define MICROPY_HW_BOARD_NAME       "DCFURS"
 #define MICROPY_HW_MCU_NAME         "STM32F401xE"
 
+#define MICROPY_PY_DCFURS           (1)
+
 #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (0)
 #define MICROPY_HW_HAS_SWITCH       (1)
 #define MICROPY_HW_HAS_FLASH        (1)

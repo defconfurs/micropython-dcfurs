@@ -100,6 +100,10 @@ $(BUILD)/$(BTREE_DIR)/%.o: CFLAGS += -Wno-old-style-definition -Wno-sign-compare
 $(BUILD)/extmod/modbtree.o: CFLAGS += $(BTREE_DEFS)
 endif
 
+ifeq ($(MICROPY_PY_DCFURS),1)
+SRC_MOD += extmod/moddcfurs.c
+endif
+
 # py object files
 PY_CORE_O_BASENAME = $(addprefix py/,\
 	mpstate.o \
@@ -239,6 +243,7 @@ PY_EXTMOD_O_BASENAME = \
 	extmod/modwebsocket.o \
 	extmod/modwebrepl.o \
 	extmod/modframebuf.o \
+	extmod/moddcfurs.o \
 	extmod/vfs.o \
 	extmod/vfs_reader.o \
 	extmod/vfs_fat.o \
