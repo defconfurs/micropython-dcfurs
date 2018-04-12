@@ -524,7 +524,7 @@ STATIC mp_obj_t machine_sleep(void) {
 }
 MP_DEFINE_CONST_FUN_OBJ_0(machine_sleep_obj, machine_sleep);
 
-STATIC mp_obj_t machine_deepsleep(void) {
+STATIC mp_obj_t machine_deepsleep(uint n_args, const mp_obj_t *args) {
     rtc_init_finalise();
 
 #if defined(STM32L4)
@@ -561,6 +561,13 @@ STATIC mp_obj_t machine_deepsleep(void) {
     PWR->CR |= PWR_CR_CWUF;
     #endif
 
+    // Configure external wakeup pin.
+    if (n_args != 0) {
+        if (mp_obj_is_true(args[0])) {
+            PWR->CSR |= PWR_CSR_EWUP;
+        }
+    }
+
     // enable previously-enabled RTC interrupts
     RTC->CR |= save_irq_bits;
 
@@ -570,7 +577,7 @@ STATIC mp_obj_t machine_deepsleep(void) {
 #endif
     return mp_const_none;
 }
-MP_DEFINE_CONST_FUN_OBJ_0(machine_deepsleep_obj, machine_deepsleep);
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_deepsleep_obj, 0, 1, machine_deepsleep);
 
 STATIC mp_obj_t machine_reset_cause(void) {
     return MP_OBJ_NEW_SMALL_INT(reset_cause);
