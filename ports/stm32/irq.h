@@ -122,16 +122,16 @@ MP_DECLARE_CONST_FUN_OBJ_0(pyb_irq_stats_obj);
 #define IRQ_PRI_DMA             5
 #define IRQ_SUBPRI_DMA                      0
 
-#define IRQ_PRI_OTG_FS          6
-#define IRQ_SUBPRI_OTG_FS                   0
-
-#define IRQ_PRI_OTG_HS          6
-#define IRQ_SUBPRI_OTG_HS                   0
-
 #define IRQ_PRI_TIM5            6
 #define IRQ_SUBPRI_TIM5                     0
 
-#define IRQ_PRI_CAN             7
+#define IRQ_PRI_OTG_FS          7
+#define IRQ_SUBPRI_OTG_FS                   0
+
+#define IRQ_PRI_OTG_HS          7
+#define IRQ_SUBPRI_OTG_HS                   0
+
+#define IRQ_PRI_CAN             8
 #define IRQ_SUBPRI_CAN                      0
 
 // Interrupt priority for non-special timers.
