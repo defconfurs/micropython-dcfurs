@@ -69,7 +69,7 @@ STATIC mp_obj_t dcfurs_matrix_init(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_matrix_init_obj, dcfurs_matrix_init);
 
-STATIC mp_obj_t dcfurs_matrix_loop(void)
+STATIC mp_obj_t dcfurs_matrix_loop(size_t n_args, const mp_obj_t *args)
 {
     /* Increment step, and blit the next dimming values */
     dcf_fb.current_step++;
@@ -99,7 +99,8 @@ STATIC mp_obj_t dcfurs_matrix_loop(void)
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_matrix_loop_obj, dcfurs_matrix_loop);
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(dcfurs_matrix_loop_obj, 0, dcfurs_matrix_loop);
 
 STATIC mp_obj_t dcfurs_set_row(mp_obj_t yobj, mp_obj_t bitmap)
 {
