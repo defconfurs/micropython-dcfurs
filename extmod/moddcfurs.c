@@ -7,6 +7,7 @@
 #if MICROPY_PY_DCFURS
 
 #define DCF_DIMMING_STEPS   16
+#define DCF_TOTAL_COLS      18
 #define DCF_TOTAL_ROWS      7
 
 #define DCF_PIN_ROW_BANKB   0xF403
@@ -153,6 +154,41 @@ STATIC mp_obj_t dcfurs_set_pixel(mp_obj_t xobj, mp_obj_t yobj, mp_obj_t vobj)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(dcfurs_set_pixel_obj, dcfurs_set_pixel);
 
+STATIC mp_obj_t dcfurs_has_pixel(mp_obj_t xobj, mp_obj_t yobj)
+{
+    int x = mp_obj_get_int(xobj);
+    int y = mp_obj_get_int(yobj);
+    if ((x < 0) || (x >= DCF_TOTAL_COLS)) {
+        return mp_const_false;
+    }
+    if ((y < 0) || (y >= DCF_TOTAL_ROWS)) {
+        return mp_const_false;
+    }
+
+    /* Corners */
+    if ((x == 0) || (x == (DCF_TOTAL_COLS-1))) {
+        if ((y == 0) || (y==(DCF_TOTAL_ROWS-1))) {
+            return mp_const_false;
+        }
+    }
+
+    /* Bridge of the nose */
+    if (y == (DCF_TOTAL_ROWS-2)) {
+        if ((x > 6) && (x < 11)) {
+            return mp_const_false;
+        }
+    }
+    if (y == (DCF_TOTAL_ROWS-1)) {
+        if ((x > 5) && (x < 12)) {
+            return mp_const_false;
+        }
+    }
+
+    /* Otherwise, the pixel exists. */
+    return mp_const_true;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(dcfurs_has_pixel_obj, dcfurs_has_pixel);
+
 STATIC mp_obj_t dcfurs_clear(void)
 {
     int i;
@@ -165,11 +201,15 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_clear_obj, dcfurs_clear);
 
 STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_dcfurs) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_matrix_init), (mp_obj_t)&dcfurs_matrix_init_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_matrix_loop), (mp_obj_t)&dcfurs_matrix_loop_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_set_row), (mp_obj_t)&dcfurs_set_row_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_set_pixel), (mp_obj_t)&dcfurs_set_pixel_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_clear), (mp_obj_t)&dcfurs_clear_obj },
+    { MP_ROM_QSTR(MP_QSTR_matrix_init), MP_ROM_PTR(&dcfurs_matrix_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_matrix_loop), MP_ROM_PTR(&dcfurs_matrix_loop_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_row), MP_ROM_PTR(&dcfurs_set_row_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_pixel), MP_ROM_PTR(&dcfurs_set_pixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&dcfurs_clear_obj) },
+
+    { MP_ROM_QSTR(MP_QSTR_has_pixel), MP_ROM_PTR(&dcfurs_has_pixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ncols), MP_ROM_INT(DCF_TOTAL_COLS) },
+    { MP_ROM_QSTR(MP_QSTR_nrows), MP_ROM_INT(DCF_TOTAL_ROWS) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_dcfurs_globals, mp_module_dcfurs_globals_table);
