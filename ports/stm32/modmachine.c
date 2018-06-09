@@ -558,6 +558,7 @@ STATIC mp_obj_t machine_deepsleep(uint n_args, const mp_obj_t *args) {
     // TODO
     #else
     // clear global wake-up flag
+    PWR->CSR &= ~PWR_CSR_EWUP;
     PWR->CR |= PWR_CR_CWUF;
     #endif
 
