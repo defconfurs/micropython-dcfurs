@@ -101,7 +101,10 @@ $(BUILD)/extmod/modbtree.o: CFLAGS += $(BTREE_DEFS)
 endif
 
 ifeq ($(MICROPY_PY_DCFURS),1)
-SRC_MOD += extmod/moddcfurs.c
+CFLAGS_MOD += -DMICROPY_PY_DCFURS=1
+SRC_MOD += extmod/dcfurs/module.c
+SRC_MOD += extmod/dcfurs/matrix.c
+SRC_MOD += extmod/dcfurs/pytext.c
 endif
 
 # py object files
@@ -243,7 +246,6 @@ PY_EXTMOD_O_BASENAME = \
 	extmod/modwebsocket.o \
 	extmod/modwebrepl.o \
 	extmod/modframebuf.o \
-	extmod/moddcfurs.o \
 	extmod/vfs.o \
 	extmod/vfs_reader.o \
 	extmod/vfs_fat.o \

@@ -1,14 +1,8 @@
-
 #include <stdio.h>
 #include <string.h>
 
 #include "py/runtime.h"
-
-#if MICROPY_PY_DCFURS
-
-#define DCF_DIMMING_STEPS   16
-#define DCF_TOTAL_COLS      18
-#define DCF_TOTAL_ROWS      7
+#include "dcfurs.h"
 
 #define DCF_PIN_ROW_BANKB   0xF403
 #define DCF_PIN_COL_BANKA   0x01FE
@@ -27,7 +21,7 @@ struct dcf_framebuf {
 
 static struct dcf_framebuf dcf_fb = {0};
 
-STATIC mp_obj_t dcfurs_matrix_init(void) {
+mp_obj_t dcfurs_matrix_init(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
     /* Prepare row driver outputs */
@@ -68,9 +62,8 @@ STATIC mp_obj_t dcfurs_matrix_init(void) {
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_matrix_init_obj, dcfurs_matrix_init);
 
-STATIC mp_obj_t dcfurs_matrix_loop(size_t n_args, const mp_obj_t *args)
+mp_obj_t dcfurs_matrix_loop(size_t n_args, const mp_obj_t *args)
 {
     /* Increment step, and blit the next dimming values */
     dcf_fb.current_step++;
@@ -101,29 +94,45 @@ STATIC mp_obj_t dcfurs_matrix_loop(size_t n_args, const mp_obj_t *args)
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(dcfurs_matrix_loop_obj, 0, dcfurs_matrix_loop);
-
-STATIC mp_obj_t dcfurs_set_row(mp_obj_t yobj, mp_obj_t bitmap)
+mp_obj_t dcfurs_set_row(mp_obj_t yobj, mp_obj_t data)
 {
     struct dcf_rowdata *row;
     int y = mp_obj_get_int(yobj);
     int step;
+    mp_buffer_info_t bufinfo;
     if ((y < 0) || (y >= DCF_TOTAL_ROWS)) {
         return mp_const_none; /* TODO: Throw a range error or something? */
     }
     
-    /* Set the row's pixels */
+    /* Clear the row */
     row = &dcf_fb.rows[y];
     for (step = 0; step < DCF_DIMMING_STEPS; step++) {
         row->pxdata[step] = 0;
     }
-    row->pxdata[0] = mp_obj_get_int(bitmap);
-
+    /* If an integer was provided, use it as a bitmap of pixels to switch on. */
+    if (mp_obj_is_integer(data)) {
+        row->pxdata[0] = mp_obj_get_int(data);
+    }
+    /* If a bytearray was provided, use it as an array of pixel intensities. */
+    else if (mp_get_buffer(data, &bufinfo, MP_BUFFER_READ)) {
+        int x;
+        const uint8_t *px = bufinfo.buf;
+        if (bufinfo.len > DCF_TOTAL_COLS) {
+            bufinfo.len = DCF_TOTAL_COLS;
+        }
+        for (x = 0; x < bufinfo.len; x++) {
+            if (px[x] == 0) continue;
+            int step = ((unsigned int)px[x] * DCF_DIMMING_STEPS + 128) / 256;
+            if (step < DCF_DIMMING_STEPS) {
+                row->pxdata[step] |= (1 << x);
+            }
+            row->pxdata[0] |= (1 << x);
+        }
+    }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(dcfurs_set_row_obj, dcfurs_set_row);
 
-STATIC mp_obj_t dcfurs_set_pixel(mp_obj_t xobj, mp_obj_t yobj, mp_obj_t vobj)
+mp_obj_t dcfurs_set_pixel(mp_obj_t xobj, mp_obj_t yobj, mp_obj_t vobj)
 {
     struct dcf_rowdata *row;
     int x = mp_obj_get_int(xobj);
@@ -152,9 +161,19 @@ STATIC mp_obj_t dcfurs_set_pixel(mp_obj_t xobj, mp_obj_t yobj, mp_obj_t vobj)
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(dcfurs_set_pixel_obj, dcfurs_set_pixel);
 
-STATIC mp_obj_t dcfurs_has_pixel(mp_obj_t xobj, mp_obj_t yobj)
+mp_obj_t dcfurs_set_frame(mp_obj_t fbobj)
+{
+    mp_obj_t *rowdata;
+    mp_obj_get_array_fixed_n(fbobj, DCF_TOTAL_ROWS, &rowdata);
+    int y;
+    for (y = 0; y < DCF_TOTAL_ROWS; y++) {
+        dcfurs_set_row(MP_OBJ_NEW_SMALL_INT(y), rowdata[y]);
+    }
+    return mp_const_none;
+}
+
+mp_obj_t dcfurs_has_pixel(mp_obj_t xobj, mp_obj_t yobj)
 {
     int x = mp_obj_get_int(xobj);
     int y = mp_obj_get_int(yobj);
@@ -187,9 +206,8 @@ STATIC mp_obj_t dcfurs_has_pixel(mp_obj_t xobj, mp_obj_t yobj)
     /* Otherwise, the pixel exists. */
     return mp_const_true;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(dcfurs_has_pixel_obj, dcfurs_has_pixel);
 
-STATIC mp_obj_t dcfurs_clear(void)
+mp_obj_t dcfurs_clear(void)
 {
     int i;
     for (i = 0; i < DCF_TOTAL_ROWS; i++) {
@@ -197,26 +215,3 @@ STATIC mp_obj_t dcfurs_clear(void)
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_clear_obj, dcfurs_clear);
-
-STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_dcfurs) },
-    { MP_ROM_QSTR(MP_QSTR_matrix_init), MP_ROM_PTR(&dcfurs_matrix_init_obj) },
-    { MP_ROM_QSTR(MP_QSTR_matrix_loop), MP_ROM_PTR(&dcfurs_matrix_loop_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_row), MP_ROM_PTR(&dcfurs_set_row_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_pixel), MP_ROM_PTR(&dcfurs_set_pixel_obj) },
-    { MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&dcfurs_clear_obj) },
-
-    { MP_ROM_QSTR(MP_QSTR_has_pixel), MP_ROM_PTR(&dcfurs_has_pixel_obj) },
-    { MP_ROM_QSTR(MP_QSTR_ncols), MP_ROM_INT(DCF_TOTAL_COLS) },
-    { MP_ROM_QSTR(MP_QSTR_nrows), MP_ROM_INT(DCF_TOTAL_ROWS) },
-};
-
-STATIC MP_DEFINE_CONST_DICT(mp_module_dcfurs_globals, mp_module_dcfurs_globals_table);
-
-const mp_obj_module_t mp_module_dcfurs = {
-    .base = { &mp_type_module },
-    .globals = (mp_obj_dict_t*)&mp_module_dcfurs_globals,
-};
-
-#endif // MICROPY_PY_DCFURS
