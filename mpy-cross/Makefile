@@ -7,6 +7,7 @@ override undefine CFLAGS_EXTRA
 override undefine LDFLAGS_EXTRA
 override undefine FROZEN_DIR
 override undefine FROZEN_MPY_DIR
+override undefine FLASH_TARBALL_FILE
 override undefine BUILD
 override undefine PROG
 endif
