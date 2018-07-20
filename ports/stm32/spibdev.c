@@ -28,6 +28,7 @@
 #include "py/mperrno.h"
 #include "irq.h"
 #include "led.h"
+#include "spi.h"
 #include "storage.h"
 
 int32_t spi_bdev_ioctl(spi_bdev_t *bdev, uint32_t op, uint32_t arg) {
@@ -79,3 +80,63 @@ int spi_bdev_writeblocks(spi_bdev_t *bdev, const uint8_t *src, uint32_t block_nu
 
     return ret;
 }
+
+/******************************************************************************/
+// Implementation of hard SPI for low level bus protocol
+
+STATIC int spi_bdev_proto_ioctl(void *self_in, uint32_t cmd) {
+    spi_bdev_obj_t *self = (spi_bdev_obj_t *)self_in;
+    SPI_InitTypeDef *init = &self->spi->spi->Init;
+
+    switch (cmd) {
+        case MP_SPI_IOCTL_INIT:
+            // set the SPI configuration values
+            init->Mode = SPI_MODE_MASTER;
+
+            // these parameters are not currently configurable
+            init->Direction = SPI_DIRECTION_2LINES;
+            init->NSS = SPI_NSS_SOFT;
+            init->TIMode = SPI_TIMODE_DISABLE;
+            init->CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+            init->CRCPolynomial = 0;
+
+            // set configurable paramaters
+            spi_set_params(self->spi, 0xffffffff, self->baudrate,
+                self->polarity, self->phase, self->bits, self->firstbit);
+
+            // init the SPI bus
+            spi_init(self->spi, false);
+            break;
+
+        case MP_SPI_IOCTL_DEINIT:
+            break;
+    }
+
+    return 0;
+}
+
+STATIC void spi_bdev_proto_transfer(void *self_in, size_t len, const uint8_t *src, uint8_t *dest) {
+    spi_bdev_obj_t *self = (spi_bdev_obj_t *)self_in;
+    uint32_t timeout = len + 100;
+    HAL_StatusTypeDef status;
+
+    if (dest == NULL) {
+        // send only
+        status = HAL_SPI_Transmit(self->spi->spi, (uint8_t*)src, len, timeout);
+    } else if (src == NULL) {
+        // receive only
+        status = HAL_SPI_Receive(self->spi->spi, dest, len, timeout);
+    } else {
+        // send and receive
+        status = HAL_SPI_TransmitReceive(self->spi->spi, (uint8_t*)src, dest, len, timeout);
+    }
+
+    if (status != HAL_OK) {
+        mp_hal_raise(status);
+    }
+}
+
+const mp_spi_proto_t spi_bdev_proto = {
+    .ioctl = spi_bdev_proto_ioctl,
+    .transfer = spi_bdev_proto_transfer,
+};

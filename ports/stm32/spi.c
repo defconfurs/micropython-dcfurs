@@ -194,7 +194,7 @@ STATIC int spi_find(mp_obj_t id) {
 
 // sets the parameters in the SPI_InitTypeDef struct
 // if an argument is -1 then the corresponding parameter is not changed
-STATIC void spi_set_params(const spi_t *spi_obj, uint32_t prescale, int32_t baudrate,
+void spi_set_params(const spi_t *spi_obj, uint32_t prescale, int32_t baudrate,
     int32_t polarity, int32_t phase, int32_t bits, int32_t firstbit) {
     SPI_HandleTypeDef *spi = spi_obj->spi;
     SPI_InitTypeDef *init = &spi->Init;

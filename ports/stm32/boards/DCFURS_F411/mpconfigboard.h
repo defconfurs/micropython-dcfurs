@@ -9,10 +9,10 @@
 
 // use external SPI flash for storage
 #define MICROPY_HW_SPIFLASH_SIZE_BITS (32 * 1024 * 1024)
-#define MICROPY_HW_SPIFLASH_CS      (pin_A15)
-#define MICROPY_HW_SPIFLASH_SCK     (pin_C10)
-#define MICROPY_HW_SPIFLASH_MOSI    (pin_C12)
-#define MICROPY_HW_SPIFLASH_MISO    (pin_C11)
+#define MICROPY_HW_SPI3_NSS         (pin_A15)
+#define MICROPY_HW_SPI3_SCK         (pin_C10)
+#define MICROPY_HW_SPI3_MOSI        (pin_C12)
+#define MICROPY_HW_SPI3_MISO        (pin_C11)
 
 // block device config for SPI flash
 extern const struct _mp_spiflash_config_t spiflash_config;

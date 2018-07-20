@@ -27,6 +27,7 @@
 #define MICROPY_INCLUDED_STM32_SPI_H
 
 #include "dma.h"
+#include "drivers/bus/spi.h"
 
 typedef struct _spi_t {
     SPI_HandleTypeDef *spi;
@@ -49,6 +50,19 @@ extern const mp_obj_type_t machine_hard_spi_type;
 
 void spi_init0(void);
 void spi_init(const spi_t *spi, bool enable_nss_pin);
+void spi_set_params(const spi_t *spi_obj, uint32_t prescale, int32_t baudrate,
+    int32_t polarity, int32_t phase, int32_t bits, int32_t firstbit);
 const spi_t *spi_from_mp_obj(mp_obj_t o);
+
+typedef struct _spi_bdev_obj_t {
+    const spi_t *spi;
+    int32_t baudrate;
+    uint8_t polarity;
+    uint8_t phase;
+    uint8_t bits;
+    uint8_t firstbit;
+} spi_bdev_obj_t;
+
+extern const mp_spi_proto_t spi_bdev_proto;
 
 #endif // MICROPY_INCLUDED_STM32_SPI_H
