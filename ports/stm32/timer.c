@@ -470,6 +470,7 @@ STATIC void pyb_timer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_
         {
             mp_printf(print, ", deadtime=%u",
                 compute_ticks_from_dtg(self->tim.Instance->BDTR & TIM_BDTR_DTG));
+            mp_printf(print, ", repeat=%u", self->tim.Instance->RCR);
         }
         mp_print_str(print, ")");
     }
@@ -519,6 +520,11 @@ STATIC void pyb_timer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_
 ///       measures ticks of `source_freq` divided by `div` clock ticks.
 ///       `deadtime` is only available on timers 1 and 8.
 ///
+///   - `repeat` [0-0xff] - specifies the value to be loaded into the timers's
+///              Repetition Counter Register (RCR). This determines how many
+///              complete cycles of the timer must elapse before an update event
+///              is generated. `repeat` is only available on timer 1.
+///
 ///  You must either specify freq or both of period and prescaler.
 STATIC mp_obj_t pyb_timer_init_helper(pyb_timer_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
@@ -529,6 +535,7 @@ STATIC mp_obj_t pyb_timer_init_helper(pyb_timer_obj_t *self, size_t n_args, cons
         { MP_QSTR_div,          MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 1} },
         { MP_QSTR_callback,     MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = mp_const_none} },
         { MP_QSTR_deadtime,     MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_repeat,       MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} },
     };
 
     // parse args
@@ -559,6 +566,15 @@ STATIC mp_obj_t pyb_timer_init_helper(pyb_timer_obj_t *self, size_t n_args, cons
                                                TIM_CLOCKDIVISION_DIV1;
 
     init->RepetitionCounter = 0;
+    #if defined(IS_TIM_ADVANCED_INSTANCE)
+    if (IS_TIM_ADVANCED_INSTANCE(self->tim.Instance)) {
+    #elif defined(IS_TIM_BREAK_INSTANCE)
+    if (IS_TIM_BREAK_INSTANCE(self->tim.Instance)) {
+    #else
+    if (0) {
+    #endif
+        init->RepetitionCounter = args[7].u_int;
+    }
 
     // enable TIM clock
     switch (self->tim_id) {
@@ -613,6 +629,7 @@ STATIC mp_obj_t pyb_timer_init_helper(pyb_timer_obj_t *self, size_t n_args, cons
     if (self->tim_id != 5) {
         HAL_NVIC_SetPriority(self->irqn, IRQ_PRI_TIMX, IRQ_SUBPRI_TIMX);
         if (self->tim_id == 1) {
+            HAL_NVIC_SetPriority(self->irqn, IRQ_PRI_TIM1, IRQ_SUBPRI_TIM1);
             HAL_NVIC_SetPriority(TIM1_CC_IRQn, IRQ_PRI_TIMX, IRQ_SUBPRI_TIMX);
         #if defined(TIM8)
         } else if (self->tim_id == 8) {
