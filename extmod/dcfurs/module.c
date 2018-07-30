@@ -15,6 +15,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_clear_obj, dcfurs_clear);
 
 /* Interactive text game functions */
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_credits_obj, dcfurs_credits);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_login_obj, dcfurs_login);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_beep_obj, dcfurs_beep);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_boop_obj, dcfurs_boop);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_ctznos_obj, dcfurs_ctznos);
 
 STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_dcfurs) },
@@ -31,6 +35,10 @@ STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
 
     /* Interactive Game API */
     { MP_ROM_QSTR(MP_QSTR_credits), MP_ROM_PTR(&dcfurs_credits_obj) },
+    { MP_ROM_QSTR(MP_QSTR_login), MP_ROM_PTR(&dcfurs_login_obj) },
+    { MP_ROM_QSTR(MP_QSTR_beep), MP_ROM_PTR(&dcfurs_beep_obj) },
+    { MP_ROM_QSTR(MP_QSTR_boop), MP_ROM_PTR(&dcfurs_boop_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ctznos), MP_ROM_PTR(&dcfurs_ctznos_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_dcfurs_globals, mp_module_dcfurs_globals_table);
