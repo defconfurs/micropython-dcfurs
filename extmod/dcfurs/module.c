@@ -5,6 +5,14 @@
 #include "py/runtime.h"
 #include "dcfurs.h"
 
+/* Retrieve the serial number from the OTP memory */
+STATIC mp_obj_t
+dcfurs_serial(void)
+{
+    return MP_OBJ_NEW_SMALL_INT(*(uint16_t *)FLASH_OTP_BASE);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_serial_obj, dcfurs_serial);
+
 /* LED Matrix operations */
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(dcfurs_init_obj, dcfurs_init);
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(dcfurs_set_pixel_obj, dcfurs_set_pixel);
@@ -18,10 +26,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_credits_obj, dcfurs_credits);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_login_obj, dcfurs_login);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_beep_obj, dcfurs_beep);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_boop_obj, dcfurs_boop);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_eula_obj, dcfurs_eula);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_ctznos_obj, dcfurs_ctznos);
 
 STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_dcfurs) },
+    { MP_ROM_QSTR(MP_QSTR_serial), MP_ROM_PTR(&dcfurs_serial_obj) },
 
     /* LED Matrix API */
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&dcfurs_init_obj) },
@@ -38,6 +48,7 @@ STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_login), MP_ROM_PTR(&dcfurs_login_obj) },
     { MP_ROM_QSTR(MP_QSTR_beep), MP_ROM_PTR(&dcfurs_beep_obj) },
     { MP_ROM_QSTR(MP_QSTR_boop), MP_ROM_PTR(&dcfurs_boop_obj) },
+    { MP_ROM_QSTR(MP_QSTR_eula), MP_ROM_PTR(&dcfurs_eula_obj) },
     { MP_ROM_QSTR(MP_QSTR_ctznos), MP_ROM_PTR(&dcfurs_ctznos_obj) },
 };
 

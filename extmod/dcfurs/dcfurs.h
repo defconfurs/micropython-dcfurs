@@ -17,9 +17,13 @@ mp_obj_t dcfurs_credits(void);
 mp_obj_t dcfurs_login(void);
 mp_obj_t dcfurs_beep(void);
 mp_obj_t dcfurs_boop(void);
+mp_obj_t dcfurs_eula(void);
 mp_obj_t dcfurs_ctznos(void);
 
 /* Draw an emote by making an external call to emote.py */
 void dcfurs_emote(const char *str);
+
+/* Simple PRNG. */
+unsigned int dcfurs_rand(void);
 
 #endif /* DCFURS_H_INCLUDED */

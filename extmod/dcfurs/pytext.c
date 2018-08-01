@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "py/runtime.h"
+#include "py/mphal.h"
 #include "dcfurs.h"
 
 const char *dcfurs_banner =
@@ -32,17 +33,36 @@ const char *dcfurs_thanks =
 #define ESC_NORMAL  "\e[0m"
 #define ESC_BOLD    "\e[1m"
 
+/* Lazy implementation to generate random-ish bytes. */
+unsigned int
+dcfurs_rand(void) {
+    static uint32_t seed = 500;
+    seed *= 1103515245;
+    seed += 12345;
+    return seed;
+}
+
+static void print_shuffle(const char *str)
+{
+    unsigned int len = strlen(str);
+    unsigned int i;
+
+    /* Spit out some random characters */
+    for (i = 0; i < len; i++) {
+        printf("%c", 0x20 + (dcfurs_rand() % 94));
+    }
+    mp_hal_delay_ms(100);
+    printf("%c", '\r');
+    while (*str != '\0') {
+        mp_hal_delay_ms(25);
+        printf("%c", *str++);
+    }
+    printf("%c", '\n');
+}
+
 static void print_credit(const char *name, const char *detail)
 {
     printf("   " ESC_BOLD "%12s" ESC_NORMAL " - %s\n", name, detail);
-}
-
-static void dcfurs_draw_bitmap(const uint32_t *buf)
-{
-    int i;
-    for (i = 0; i < DCF_TOTAL_ROWS; i++) {
-        dcfurs_set_row(MP_OBJ_NEW_SMALL_INT(i), MP_OBJ_NEW_SMALL_INT(buf[i]));
-    }
 }
 
 void dcfurs_emote(const char *str)
@@ -56,17 +76,9 @@ void dcfurs_emote(const char *str)
     }
 }
 
-void dcfurs_draw_owo(void)
-{
-    const uint32_t owo[DCF_TOTAL_ROWS] = {
-        0x1c00e, 0x22011, 0x22851, 0x22b51, 0x22491, 0x22011, 0x1c00e,
-    };
-    dcfurs_draw_bitmap(owo);
-}
-
 mp_obj_t dcfurs_credits(void)
 {
-    dcfurs_draw_owo();
+    dcfurs_emote("^.^");
 
     /* Show the Banner */
     printf(ESC_BOLD "%s" ESC_NORMAL, dcfurs_banner);
@@ -113,7 +125,6 @@ static uint32_t adler32_vstr(const vstr_t *vstr)
     return (b << 16) | a;
 }
 
-#include "py/mphal.h"
 #include "lib/mp-readline/readline.h"
 
 // A port can define mp_hal_readline if they want to use a custom function here
@@ -122,7 +133,7 @@ static uint32_t adler32_vstr(const vstr_t *vstr)
 #endif
 
 #define DCFURS_FAKE_IPADDR      "217.65.187.257"
-#define DCFURS_FAKE_HOSTNAME    "pwned.infursec.com"
+#define DCFURS_FAKE_HOSTNAME    "pwned.emptyhex.com"
 
 /* hacked boot.py */
 static const char pwned_boot_py[] =
@@ -141,7 +152,6 @@ static const char pwned_boot_py[] =
 STATIC void dcfurs_hacked(void)
 {
     int i;
-    unsigned int jitter = 500;
     double elapsed = 0.25;
 
     printf("\nBroadcast message from defalt@localhost (pts/2):\n\n");
@@ -171,8 +181,7 @@ STATIC void dcfurs_hacked(void)
         printf("boot.py             %-3d%%[%.20s] %-6d  --.-KB/s    in %.2fs\r",
                 i*5, progress + 20 - i, (sizeof(pwned_boot_py)*i)/20, elapsed);
 
-        jitter = (jitter * jitter) % 511;
-        x = 200 + jitter % 50;
+        x = 200 + dcfurs_rand() % 50;
         mp_hal_delay_ms(x);
         elapsed += (double)x / 1000;
     }
@@ -259,6 +268,7 @@ mp_obj_t dcfurs_login(void)
         dcfurs_emote("X.X");
         return mp_const_none;
     }
+    print_shuffle("Access Granted");
 
     /* Success! */
     dcfurs_emote("^.^");
@@ -279,5 +289,74 @@ mp_obj_t dcfurs_login(void)
     printf("enikeyshchik...");
     mp_hal_delay_ms(1000);
     NVIC_SystemReset();
+    return mp_const_none;
+}
+
+mp_obj_t dcfurs_eula(void)
+{
+    dcfurs_emote("@.@");
+
+    printf(ESC_BOLD "PRIVACY POLICY\n" ESC_NORMAL);
+    printf("--------------\n");
+    printf("We\'ve updated our privacy policy. This is purely out of the goodness of our\n");
+    printf("hearts, and has nothing to do with any hypothetical unions on any particular\n");
+    printf("continents. Please read every part of this policy carefully, and don\'t just\n");
+    printf("skip ahead looking for challenge clues.\n");
+    printf("\n");
+
+    printf("This policy governs your interractions with this badge, herein referred to as\n");
+    printf("\"the service,\" \"the badge,\" or \"the boop badge,\" and with all other badges\n");
+    printf("and hardware of any kind. The enumeration in this policy, of certain rights,\n");
+    printf("shall not be construed to as a license to resell this badge on eBay. By using\n");
+    printf("this service, you opt-in to hosting the fursuit lounge in your home.\n");
+    printf("\n");
+
+    printf(ESC_BOLD "YOUR PERSONAL INFORMATION\n" ESC_NORMAL);
+    printf("-------------------------\n");
+    printf("Please don\'t send us your personal information. We do not want your personal\n");
+    printf("information. We have a hard enough time keeping track of our own information,\n");
+    printf("let alone yours.\n");
+    printf("\n");
+
+    printf("If you tell us your name, internet handle, fursona, or any other identifying\n");
+    printf("information, we will forget it immediately. The next time we see you, we\'ll\n");
+    printf("struggle to remember who you are, and try desperately to get through the\n");
+    printf("conversation so we can go online and hopefully figure it out.\n");
+    printf("\n");
+
+    printf(ESC_BOLD "TRACKING PIXELS, COOKIES and BEACONS\n" ESC_NORMAL);
+    printf("------------------------------------\n");
+    printf("This badge uses pixels in order to form text and animations, some of which\n");
+    printf("may remain in your memory after you have turned off the badge. We use cookies\n");
+    printf("to encourage you to roll over, shake a paw, and go for walks. We may use\n");
+    printf("beacons to call for scritches.\n");
+    printf("\n");
+
+    printf(ESC_BOLD "3rd PARTY EXTENSIONS\n" ESC_NORMAL);
+    printf("--------------------\n");
+    printf("The Saturday night party has been extended, and will continue until midnight.\n");
+    printf("\n");
+
+    printf(ESC_BOLD "PERMISSIONS\n" ESC_NORMAL);
+    printf("-----------\n");
+    printf("For users who are not in the sudoers file, permission has been denied.\n");
+    printf("This incident will be reported.\n");
+    printf("\n");
+
+    printf(ESC_BOLD "SCOPE AND LIMITATIONS\n" ESC_NORMAL);
+    printf("---------------------\n");
+    printf("This policy supersedes any applicable federal, state and local laws,\n");
+    printf("regulations and ordinances, international treaties, and legal agreements that\n");
+    printf("would otherwise apply. If any provision of this policy is found by a court to\n");
+    printf("be unenforceable, it nevertheless remains in force.\n");
+    printf("\n");
+
+    printf("This organization is not liable and this agreement shall not be construed.\n");
+    printf("These statements have not been peer reviewed. This badge is intended as a\n");
+    printf("proof that P=NP.\n");
+    printf("\n");
+
+    printf("If you know anyone in DC801, please tell them we're cool.\n");
+    printf("\n");
     return mp_const_none;
 }
