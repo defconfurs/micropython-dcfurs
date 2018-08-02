@@ -4,6 +4,8 @@
 
 #include "py/runtime.h"
 #include "py/mphal.h"
+#include "py/objstr.h"
+#include "py/builtin.h"
 #include "dcfurs.h"
 
 const char *dcfurs_banner =
@@ -114,23 +116,15 @@ mp_obj_t dcfurs_ctznos(void)
     return mp_const_none;
 }
 
-static uint32_t adler32_vstr(const vstr_t *vstr)
+static uint32_t adler32(const char *str)
 {
     uint32_t a = 1, b = 0;
-    int i;
-    for (i = 0; i < vstr->len; i++) {
-        a = (a + vstr->buf[i]) % 65521;
+    while (*str != '\0') {
+        a = (a + *str++) % 65521;
         b = (b + a) % 66521;
     }
     return (b << 16) | a;
 }
-
-#include "lib/mp-readline/readline.h"
-
-// A port can define mp_hal_readline if they want to use a custom function here
-#ifndef mp_hal_readline
-#define mp_hal_readline readline
-#endif
 
 #define DCFURS_FAKE_IPADDR      "217.65.187.257"
 #define DCFURS_FAKE_HOSTNAME    "pwned.emptyhex.com"
@@ -250,19 +244,9 @@ STATIC void dcfurs_flush_stdin(void)
 
 mp_obj_t dcfurs_login(void)
 {
-    /* Prompt the user for a password. */
-    vstr_t line;
-    vstr_init(&line, 64);
-    int ret = mp_hal_readline(&line, "Enter Password: ");
-    if (ret == CHAR_CTRL_C) {
-        nlr_raise(mp_obj_new_exception(&mp_type_KeyboardInterrupt));
-    }
-    if (line.len == 0 && ret == CHAR_CTRL_D) {
-        nlr_raise(mp_obj_new_exception(&mp_type_EOFError));
-    }
-
-    /* Check the password */
-    if (adler32_vstr(&line) != 0x3c4e06ff) {
+    const char *prompt = "Enter Password: ";
+    mp_obj_t password = mp_call_function_1(MP_OBJ_FROM_PTR(&mp_builtin_input_obj), mp_obj_new_str(prompt, strlen(prompt)));
+    if (adler32(mp_obj_str_get_str(password)) != 0x3c4e06ff) {
         printf("Incorrect Password!\n");
         printf("Hint: Ignorance is Strength\n");
         dcfurs_emote("X.X");
