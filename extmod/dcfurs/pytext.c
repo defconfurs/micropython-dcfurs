@@ -378,8 +378,5 @@ mp_obj_t dcfurs_eula(void)
     printf("These statements have not been peer reviewed. This badge is intended as a\n");
     printf("proof that P=NP.\n");
     printf("\n");
-
-    printf("If you know anyone in DC801, please tell them we're cool.\n");
-    printf("\n");
     return mp_const_none;
 }
