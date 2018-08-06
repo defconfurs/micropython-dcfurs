@@ -78,6 +78,23 @@ void dcfurs_emote(const char *str)
     }
 }
 
+void dcfurs_bletx(const char *str)
+{
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0) {
+        mp_obj_t mod = mp_import_name(MP_QSTR_badge, mp_const_none, 0);
+        mp_obj_t ble = mp_load_attr(mod, MP_QSTR_ble);
+        mp_obj_t ble_write_args[3] = {
+            0,  /* Function object */
+            0,  /* UART object */
+            mp_obj_new_str(str, strlen(str))
+        };
+        mp_load_method(ble, MP_QSTR_write, ble_write_args);
+        mp_call_method_n_kw(1, 0, ble_write_args);
+        nlr_pop();
+    }
+}
+
 mp_obj_t dcfurs_credits(void)
 {
     dcfurs_emote("^.^");
@@ -116,6 +133,33 @@ mp_obj_t dcfurs_ctznos(void)
     return mp_const_none;
 }
 
+#define DCFURS_FAKE_IPADDR      "217.65.287.142"
+#define DCFURS_FAKE_BCAST       "217.65.287.255"
+#define DCFURS_FAKE_HOSTNAME    "pwned.emptyhex.com"
+
+mp_obj_t dcfurs_awoo(void)
+{
+    const char *awoonet = "howl.awoonet.com";
+    double elapsed = 0.0;
+    unsigned int i;
+
+    dcfurs_bletx("tx: awoo\r\n");
+    dcfurs_emote("awoo");
+
+    printf("PING %s (%s) 56(64) bytes of data.\n", awoonet, DCFURS_FAKE_BCAST);
+    for (i = 0; i < 4; i++) {
+        unsigned int x = 200 + dcfurs_rand() % 50;
+        unsigned int ip = (dcfurs_rand() % 253) + 1;
+        elapsed += (double)x / 1000;
+        mp_hal_delay_ms(x);
+        printf("64 bytes from 217.65.187.%d (217.65.187.%d): awoo_seq=%d ttl=64 time=%.3f ms\n", ip, ip, i, elapsed);
+    }
+    printf("\n--- %s ping statistics ---\n", awoonet);
+    printf("1 awoo transmitted, %d received, 0%% packet loss, time %d ms\n", i, (int)(elapsed * 1000));
+    //printf("rtt min/avg/max/mdev\n");
+    return mp_const_none;
+}
+
 static uint32_t adler32(const char *str)
 {
     uint32_t a = 1, b = 0;
@@ -126,8 +170,6 @@ static uint32_t adler32(const char *str)
     return (b << 16) | a;
 }
 
-#define DCFURS_FAKE_IPADDR      "217.65.187.257"
-#define DCFURS_FAKE_HOSTNAME    "pwned.emptyhex.com"
 
 /* hacked boot.py */
 static const char pwned_boot_py[] =
@@ -141,6 +183,7 @@ static const char pwned_boot_py[] =
 "#pyb.usb_mode('VCP+HID') # act as a serial device and a mouse\r\n"
 "import settings\r\n"
 "settings.banner = \"UBER PWNED By Defalt\"\r\n"
+"settings.bootanim = \"scroll\"\r\n"
 ;
 
 STATIC void dcfurs_hacked(void)
@@ -313,7 +356,7 @@ mp_obj_t dcfurs_eula(void)
     printf("This badge uses pixels in order to form text and animations, some of which\n");
     printf("may remain in your memory after you have turned off the badge. We use cookies\n");
     printf("to encourage you to roll over, shake a paw, and go for walks. We may use\n");
-    printf("beacons to call for scritches.\n");
+    printf("beacons to start a howl.\n");
     printf("\n");
 
     printf(ESC_BOLD "3rd PARTY EXTENSIONS\n" ESC_NORMAL);

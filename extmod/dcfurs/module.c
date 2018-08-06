@@ -28,6 +28,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_beep_obj, dcfurs_beep);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_boop_obj, dcfurs_boop);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_eula_obj, dcfurs_eula);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_ctznos_obj, dcfurs_ctznos);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(dcfurs_awoo_obj, dcfurs_awoo);
 
 STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_dcfurs) },
@@ -50,6 +51,7 @@ STATIC const mp_rom_map_elem_t mp_module_dcfurs_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_boop), MP_ROM_PTR(&dcfurs_boop_obj) },
     { MP_ROM_QSTR(MP_QSTR_eula), MP_ROM_PTR(&dcfurs_eula_obj) },
     { MP_ROM_QSTR(MP_QSTR_ctznos), MP_ROM_PTR(&dcfurs_ctznos_obj) },
+    { MP_ROM_QSTR(MP_QSTR_awoo), MP_ROM_PTR(&dcfurs_awoo_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_dcfurs_globals, mp_module_dcfurs_globals_table);
