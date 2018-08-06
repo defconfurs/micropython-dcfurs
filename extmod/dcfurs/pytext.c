@@ -275,6 +275,7 @@ mp_obj_t dcfurs_login(void)
     const char *prompt = "Enter Password: ";
     mp_obj_t password;
     
+    dcfurs_emote("?.?");
     printf("#################################################\n");
     printf("#                                               #\n");
     printf("#     YOU ARE ACCESSING A RESTRICTED SYSTEM     #\n");
