@@ -16,22 +16,6 @@ const char *dcfurs_banner =
 "/_____/\\____/_/    \\__,_/_/  /____/  /_____/\\__,_/\\__,_/\\__, /\\___/\n" 
 "                                                      /_____/\n";
 
-const char *dcfurs_thanks =
-" _______  __  __  ______  __  __  __  __\n"
-"/\\_   __\\/\\ \\/\\ \\/\\  __ \\/\\ \\/\\ \\/\\ \\/\\ \\\n"
-"\\/_/\\ \\_/\\ \\ \\_\\ \\ \\ \\_\\ \\ \\  \\\\ \\ \\ \\/ /\n"
-"   \\ \\ \\  \\ \\  __ \\ \\  __ \\ \\     \\ \\   <\n"
-"    \\ \\ \\  \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\\\ \\\n"
-"     \\ \\_\\  \\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\ \\_\\\n"
-"      \\/_/   \\/_/\\/_/\\/_/\\/_/\\/_/\\/_/\\/_/\\/_/\n"
-"                   __   __  ______  __  __\n"
-"                  /\\ \\ /\\ \\/\\  __ \\/\\ \\ \\ \\\n"
-"                  \\   \\\\/ /\\ \\ \\ \\ \\ \\ \\ \\ \\\n"
-"                    \\    /  \\ \\ \\ \\ \\ \\ \\ \\ \\\n"
-"                     \\ \\ \\   \\ \\ \\_\\ \\ \\ \\_\\ \\\n"
-"                      \\ \\_\\   \\ \\_____\\ \\_____\\\n"
-"                       \\/_/    \\/_____/\\/_____/\n";
-
 #define ESC_NORMAL  "\e[0m"
 #define ESC_BOLD    "\e[1m"
 
@@ -106,10 +90,17 @@ mp_obj_t dcfurs_credits(void)
     printf("Brought to you by the dedication and hard work from:\n");
     print_credit("Foobar", "Electronics design and manufacturing");
     print_credit("Alofoxx", "Business, logistics and software");
-    print_credit("DranoTheCat", "Graphics design");
+    print_credit("DranoTheCat", "Graphics design and interactive animations");
     print_credit("Kayfox", "Software and logistics");
     print_credit("LoialOtter", "Animations and firmware");
-    print_credit("Liquidthex", "Animations and software");
+    print_credit("Liquidthex", "Animations and badge web animator");
+
+    printf("\nSpecial thanks to our Anarchist backers:\n");
+    printf("   %12s   %12s   %12s\n", "Krhainos", "Taka", "Fuji");
+    printf("   %12s   %12s   %12s\n", "P4nc4k3s", "ohp3x", "Altezza");
+    printf("   %12s   %12s   %12s\n", "pupgrammer", "Hon1nbo", "Leo");
+    printf("   %12s   %12s   %12s\n", "Semi", "", "");
+    printf("   And 10 more who wish to remain anonymous\n");
 
     printf("\nStay fuzzy, and happy hacking!\n\n");
     return mp_const_none;
@@ -124,12 +115,6 @@ mp_obj_t dcfurs_beep(void)
 mp_obj_t dcfurs_boop(void)
 {
     printf("beep\n");
-    return mp_const_none;
-}
-
-mp_obj_t dcfurs_ctznos(void)
-{
-    printf("%s", dcfurs_thanks);
     return mp_const_none;
 }
 
@@ -152,7 +137,7 @@ mp_obj_t dcfurs_awoo(void)
         unsigned int ip = (dcfurs_rand() % 253) + 1;
         elapsed += (double)x / 1000;
         mp_hal_delay_ms(x);
-        printf("64 bytes from 217.65.187.%d (217.65.187.%d): awoo_seq=%d ttl=64 time=%.3f ms\n", ip, ip, i, elapsed);
+        printf("64 bytes from 217.65.287.%d (217.65.287.%d): awoo_seq=%d ttl=64 time=%.3f ms\n", ip, ip, i, elapsed);
     }
     printf("\n--- %s ping statistics ---\n", awoonet);
     printf("1 awoo transmitted, %d received, 0%% packet loss, time %d ms\n", i, (int)(elapsed * 1000));
@@ -288,14 +273,24 @@ STATIC void dcfurs_flush_stdin(void)
 mp_obj_t dcfurs_login(void)
 {
     const char *prompt = "Enter Password: ";
-    mp_obj_t password = mp_call_function_1(MP_OBJ_FROM_PTR(&mp_builtin_input_obj), mp_obj_new_str(prompt, strlen(prompt)));
+    mp_obj_t password;
+    
+    printf("#################################################\n");
+    printf("#                                               #\n");
+    printf("#     YOU ARE ACCESSING A RESTRICTED SYSTEM     #\n");
+    printf("#                                               #\n");
+    printf("#################################################\n");
+
+    password = mp_call_function_1(MP_OBJ_FROM_PTR(&mp_builtin_input_obj), mp_obj_new_str(prompt, strlen(prompt)));
     if (adler32(mp_obj_str_get_str(password)) != 0x3c4e06ff) {
-        printf("Incorrect Password!\n");
-        printf("Hint: Ignorance is Strength\n");
+        print_shuffle("Incorrect Password!");
+        print_shuffle("Hint: Ignorance is Strength");
         dcfurs_emote("X.X");
         return mp_const_none;
     }
-    print_shuffle("Access Granted");
+    print_shuffle("--- Access Granted ---");
+    mp_hal_delay_ms(250);
+    printf("\nLast login: %s %s from %s\n", __DATE__, __TIME__, DCFURS_FAKE_HOSTNAME);
 
     /* Success! */
     dcfurs_emote("^.^");
