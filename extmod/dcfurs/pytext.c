@@ -99,8 +99,8 @@ mp_obj_t dcfurs_credits(void)
     printf("   %12s   %12s   %12s\n", "Krhainos", "Taka", "Fuji");
     printf("   %12s   %12s   %12s\n", "P4nc4k3s", "ohp3x", "Altezza");
     printf("   %12s   %12s   %12s\n", "pupgrammer", "Hon1nbo", "Leo");
-    printf("   %12s   %12s   %12s\n", "Semi", "", "");
-    printf("   And 10 more who wish to remain anonymous\n");
+    printf("   %12s   %12s   %12s\n", "Semi", "Panda", "HighWiz");
+    printf("   And 8 more who wish to remain anonymous\n");
 
     printf("\nStay fuzzy, and happy hacking!\n\n");
     return mp_const_none;
